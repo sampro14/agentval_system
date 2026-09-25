@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agenteval
+      POSTGRES_PASSWORD: agenteval
+      POSTGRES_DB: agenteval
+    ports: ["${AGENTEVAL_PG_PORT:-5433}:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenteval"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      AGENTEVAL_DATABASE_URL: postgresql+asyncpg://agenteval:agenteval@postgres:5432/agenteval
+      AGENTEVAL_REDIS_URL: redis://redis:6379/0
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # Image the worker uses to run generated code. Build once: docker compose build sandbox
+  sandbox:
+    build:
+      context: .
+      dockerfile: agenteval/execution/docker/sandbox.Dockerfile
+    image: agenteval-sandbox:latest
+    profiles: ["build-only"]
+
+  # Browser variant for Playwright tests (large: ~2GB). Build: docker compose build sandbox-browser
+  sandbox-browser:
+    build:
+      context: .
+      dockerfile: agenteval/execution/docker/sandbox-browser.Dockerfile
+    image: agenteval-sandbox-browser:latest
+    profiles: ["build-only"]
+
+volumes:
+  pgdata:
