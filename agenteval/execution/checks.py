@@ -7,9 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from agenteval.config import Settings
-from agenteval.execution.workspace import IGNORED_DIRS
+from agenteval.execution.workspace import IGNORED_DIRS, REPORT_DIR
 
-REPORT_DIR = ".agenteval"
 JUNIT_REPORT = f"{REPORT_DIR}/pytest.xml"
 PYTEST_COMMAND = f"python -m pytest -q --tb=short -p no:cacheprovider --junitxml={JUNIT_REPORT}"
 COMPILE_COMMAND = "python -m compileall -q ."

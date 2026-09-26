@@ -22,6 +22,10 @@ class RunRepository:
     async def get(self, run_id: str) -> Run | None:
         return await self.session.get(Run, run_id)
 
+    async def list_runs(self, limit: int = 50) -> list[Run]:
+        result = await self.session.scalars(select(Run).order_by(Run.created_at.desc()).limit(limit))
+        return list(result)
+
     async def mark_running(self, run: Run) -> None:
         run.status = "running"
         run.started_at = datetime.now(UTC)
@@ -106,11 +110,23 @@ class TrajectoryRepository:
             self.session.add(Evaluation(run_id=run_id, metric=metric, score=float(value), evaluator=evaluator))
         await self.session.commit()
 
-    async def events(self, run_id: str) -> list[AgentEvent]:
+    async def events(self, run_id: str, after_seq: int = 0) -> list[AgentEvent]:
+        """Events in order; with after_seq, only those newer than it (for cheap polling)."""
         result = await self.session.scalars(
-            select(AgentEvent).where(AgentEvent.run_id == run_id).order_by(AgentEvent.seq)
+            select(AgentEvent).where(AgentEvent.run_id == run_id, AgentEvent.seq > after_seq).order_by(AgentEvent.seq)
         )
         return list(result)
+
+    async def metric_by_run(self, run_ids: list[str], metric: str) -> dict[str, float]:
+        """The value of one evaluation metric for each run that has it."""
+        if not run_ids:
+            return {}
+        rows = await self.session.execute(
+            select(Evaluation.run_id, Evaluation.score).where(
+                Evaluation.run_id.in_(run_ids), Evaluation.metric == metric
+            )
+        )
+        return {run_id: score for run_id, score in rows}
 
     async def failures(self, run_id: str) -> list[Failure]:
         return list(await self.session.scalars(select(Failure).where(Failure.run_id == run_id)))

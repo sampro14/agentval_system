@@ -6,10 +6,12 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from agenteval.config import DEFAULT_MODELS, ProviderName, get_settings
+from agenteval.datasets import get_task
 from agenteval.storage.models import Run
 from agenteval.storage.repositories.runs import RunRepository, TrajectoryRepository
 from agenteval.workers.queue import RunQueue
@@ -18,10 +20,18 @@ router = APIRouter(prefix="/api/v1/runs", tags=["runs"])
 
 
 class CreateRun(BaseModel):
-    task: str = Field(min_length=1)
+    task: str | None = Field(default=None, min_length=1)
+    task_id: str | None = None  # a task from datasets/tasks.json, run against the sample app
     workflow: str = "software_engineering"
+    provider: ProviderName | None = None
     model: str | None = None
     max_repair_iterations: int = Field(default=3, ge=0, le=10)
+
+    @model_validator(mode="after")
+    def _needs_a_task(self) -> CreateRun:
+        if not self.task and not self.task_id:
+            raise ValueError("provide `task` or `task_id`")
+        return self
 
 
 class RunOut(BaseModel):
@@ -31,6 +41,9 @@ class RunOut(BaseModel):
     task: str
     workflow: str
     workflow_version: str
+    provider: str | None
+    model: str | None
+    task_id: str | None
     status: str
     error: str | None
     created_at: datetime
@@ -39,6 +52,8 @@ class RunOut(BaseModel):
     total_tokens: int | None
     total_latency_ms: int | None
     final_score: float | None
+    # 1.0 / 0.0 from the task's hidden acceptance test; None if the run has no such test (or it hasn't run yet).
+    acceptance_passed: float | None = None
 
 
 class EventOut(BaseModel):
@@ -98,23 +113,54 @@ async def _require_run(run_id: str, session: AsyncSession) -> Run:
 async def create_run(
     body: CreateRun, session: AsyncSession = Depends(get_session), queue: RunQueue = Depends(get_queue)
 ) -> Run:
-    model_config: dict[str, Any] = {"max_repair_iterations": body.max_repair_iterations}
-    if body.model:
-        model_config["llm_model"] = body.model
-    run = await RunRepository(session).create(body.task, body.workflow, model_config)
+    settings = get_settings()
+    task_text = body.task
+    seed_config: dict[str, Any] = {}
+    if body.task_id:
+        try:
+            dataset_task = get_task(body.task_id)
+        except KeyError:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown task_id: {body.task_id}") from None
+        task_text = task_text or dataset_task.task
+        seed_config = {"task_id": dataset_task.id, "seed": "sample_app"}
+    provider = body.provider or settings.llm_provider
+    # A provider override without a model uses that provider's default, not the global model.
+    model = body.model or (DEFAULT_MODELS[provider] if body.provider else settings.resolved_model)
+    model_config: dict[str, Any] = {
+        "llm_provider": provider,
+        "llm_model": model,
+        "max_repair_iterations": body.max_repair_iterations,
+        **seed_config,
+    }
+    run = await RunRepository(session).create(task_text or "", body.workflow, model_config)
     await queue.enqueue(run.id)
     return run
 
 
+async def _with_acceptance(runs: list[Run], session: AsyncSession) -> list[RunOut]:
+    acceptance = await TrajectoryRepository(session).metric_by_run([r.id for r in runs], "acceptance_passed")
+    return [RunOut.model_validate(r).model_copy(update={"acceptance_passed": acceptance.get(r.id)}) for r in runs]
+
+
+@router.get("", response_model=list[RunOut])
+async def list_runs(limit: int = Query(50, ge=1, le=200), session: AsyncSession = Depends(get_session)) -> list[RunOut]:
+    """Newest runs first."""
+    return await _with_acceptance(await RunRepository(session).list_runs(limit), session)
+
+
 @router.get("/{run_id}", response_model=RunOut)
-async def get_run(run_id: str, session: AsyncSession = Depends(get_session)) -> Run:
-    return await _require_run(run_id, session)
+async def get_run(run_id: str, session: AsyncSession = Depends(get_session)) -> RunOut:
+    run = await _require_run(run_id, session)
+    return (await _with_acceptance([run], session))[0]
 
 
 @router.get("/{run_id}/trajectory", response_model=list[EventOut])
-async def get_trajectory(run_id: str, session: AsyncSession = Depends(get_session)) -> list[Any]:
+async def get_trajectory(
+    run_id: str, after_seq: int = Query(0, ge=0), session: AsyncSession = Depends(get_session)
+) -> list[Any]:
+    """The run's events in order. Pass after_seq (the last seq already seen) to get only newer ones."""
     await _require_run(run_id, session)
-    return list(await TrajectoryRepository(session).events(run_id))
+    return list(await TrajectoryRepository(session).events(run_id, after_seq))
 
 
 @router.get("/{run_id}/failures", response_model=list[FailureOut])

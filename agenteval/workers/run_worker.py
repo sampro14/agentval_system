@@ -15,8 +15,11 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agenteval.config import Settings, get_settings
+from agenteval.datasets import SEEDS, get_task
+from agenteval.evaluation.acceptance import run_acceptance
+from agenteval.evaluation.retrieval import score_retrieval
 from agenteval.execution.docker.sandbox import DockerSandbox, Sandbox
-from agenteval.execution.workspace import create_workspace
+from agenteval.execution.workspace import create_workspace, seed_workspace
 from agenteval.llm.provider import LLMProvider, get_provider
 from agenteval.observability.events import NodeError
 from agenteval.orchestration.deps import Deps
@@ -44,19 +47,25 @@ async def execute_run(
             return "missing"
         await runs.mark_running(run)
 
-        run_settings = settings.model_copy(update=run.model_config_)
+        # Only setting overrides go into Settings; the rest of model_config (task_id, seed) is run metadata.
+        overrides = {k: v for k, v in run.model_config_.items() if k in Settings.model_fields}
+        run_settings = settings.model_copy(update=overrides)
         deps = Deps(
             settings=run_settings,
             llm=llm or get_provider(run_settings),
             sandbox=sandbox or DockerSandbox(run_settings),
         )
         workspace = create_workspace(settings.workspace_root, run_id)
+        if seed := SEEDS.get(run.model_config_.get("seed", "")):
+            seed_workspace(seed, workspace)
         state: dict[str, Any] = {"run_id": run_id, "task": run.task, "workspace": str(workspace), "trajectory": []}
         failure_ids: list[str] = []
         final: dict[str, Any] = {}
+        events_seen: list[dict[str, Any]] = []
         try:
             async for chunk in build_graph(deps).astream(state, stream_mode="updates"):
                 for update in chunk.values():
+                    events_seen += update.get("trajectory", [])
                     await trajectory.add_events(run_id, update.get("trajectory", []))
                     if "failures" in update:
                         row = await trajectory.add_failure(run_id, update["failures"][-1])
@@ -65,6 +74,16 @@ async def execute_run(
                         repair = update["repairs"][-1]
                         await trajectory.add_repair(run_id, failure_ids[repair["failure_index"]], repair)
                     final.update(update)
+            if task_id := run.model_config_.get("task_id"):
+                # Independent ground truth from the task's hidden acceptance test, run before cleanup.
+                acceptance = await run_acceptance(get_task(task_id), workspace, deps.sandbox, run_settings)
+                if acceptance:
+                    await trajectory.add_evaluations(run_id, acceptance, evaluator="acceptance_v1")
+                # How well research chose what to read, scored against the task's ground truth.
+                research = next((e for e in events_seen if e["agent"] == "research"), None)
+                if research:
+                    report = score_retrieval(get_task(task_id), research["output"]["files_selected"])
+                    await trajectory.add_evaluations(run_id, report.metrics(), evaluator="retrieval_v1")
         except NodeError as exc:
             await trajectory.add_events(run_id, [exc.event])
             await runs.finish(run, "error", error=str(exc))

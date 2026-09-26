@@ -13,3 +13,9 @@ build/
 .vscode/
 node_modules/
 .next/
+
+# Markdown docs are kept local only (README.md, docs/system-design.md, ...)
+*.md
+
+# Scratch state for the step-by-step agent runner
+.agenteval-dev/

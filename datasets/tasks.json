@@ -1,0 +1,174 @@
+[
+  {
+    "id": "change-password",
+    "title": "Change password",
+    "difficulty": "easy",
+    "tags": [
+      "single-module",
+      "tests-required"
+    ],
+    "task": "Add a function `change_password(conn, user_id, old_password, new_password)` to `authkit/users.py`. It must verify `old_password` against the stored hash and raise `AuthenticationError` if it is wrong (or the user does not exist). The new password must satisfy the same minimum-length rule as registration; otherwise raise `UserError`. On success store a freshly hashed `new_password`. Add pytest tests for it.",
+    "requirements": [
+      "change_password(conn, user_id, old_password, new_password) exists in authkit/users.py",
+      "A wrong old password raises AuthenticationError",
+      "A new password shorter than the registration minimum raises UserError",
+      "After a successful change the new password authenticates and the old one no longer does",
+      "pytest tests cover success, wrong old password and short new password"
+    ],
+    "acceptance_test": "change-password.py",
+    "needed_context": [
+      "authkit/users.py"
+    ],
+    "helpful_context": [
+      "authkit/security.py",
+      "tests/test_users.py",
+      "tests/conftest.py",
+      "migrations/001_users.sql"
+    ]
+  },
+  {
+    "id": "email-validation",
+    "title": "Validate email addresses at registration",
+    "difficulty": "easy",
+    "tags": [
+      "single-module",
+      "tests-required"
+    ],
+    "task": "Make `authkit.users.register` reject invalid email addresses by raising a new `InvalidEmailError` (a subclass of `UserError`, defined in `authkit/users.py`). An email is valid only if it has exactly one `@`, a non-empty local part, no whitespace after trimming the ends, and a domain that contains a dot with non-empty labels on both sides (`a@b.co` is valid; `a@b`, `@b.co`, `a@@b.co`, `a b@c.co` and `a@b.` are invalid). Valid emails are still trimmed and lower-cased as before. Add pytest tests.",
+    "requirements": [
+      "InvalidEmailError subclasses UserError and is defined in authkit/users.py",
+      "register raises InvalidEmailError for emails without exactly one @, with an empty local part, containing whitespace, or with a domain lacking a dot or with an empty label",
+      "Valid emails still register and are trimmed and lower-cased",
+      "pytest tests cover valid and invalid emails"
+    ],
+    "acceptance_test": "email-validation.py",
+    "needed_context": [
+      "authkit/users.py"
+    ],
+    "helpful_context": [
+      "tests/test_users.py",
+      "tests/conftest.py",
+      "authkit/validators.py"
+    ]
+  },
+  {
+    "id": "password-reset",
+    "title": "Password reset flow",
+    "difficulty": "hard",
+    "tags": [
+      "migration",
+      "multi-file",
+      "tests-required",
+      "design-doc-example"
+    ],
+    "task": "Implement a password reset flow in `authkit/`. Add `request_password_reset(conn, email, now=None) -> str | None` which returns a random single-use token valid for 1 hour, or `None` if no user has that email. Add `reset_password(conn, token, new_password, now=None) -> None` which sets the user's new password (same minimum-length rule as registration, otherwise raise `UserError`) and marks the token used. It must raise `InvalidTokenError` (a subclass of `UserError`, defined in `authkit/users.py`) for an unknown, expired or already-used token. `now` is an optional timezone-aware UTC `datetime` (default: the current time) so expiry can be tested. Tokens must never be stored in plaintext, so store only a hash. Persist tokens in a new table created by a new numbered SQL migration in `migrations/`. Add pytest tests covering the whole flow.",
+    "requirements": [
+      "request_password_reset(conn, email, now=None) returns a token, or None for an unknown email",
+      "reset_password(conn, token, new_password, now=None) changes the password so the new one authenticates and the old one does not",
+      "A token is valid for 1 hour and is single-use; unknown, expired and reused tokens raise InvalidTokenError",
+      "InvalidTokenError subclasses UserError and is defined in authkit/users.py",
+      "A too-short new password raises UserError",
+      "Only a hash of the token is stored, never the plaintext token",
+      "A new numbered migration in migrations/ creates the token table and applies on a fresh database",
+      "pytest tests cover the full flow, expiry, reuse and unknown tokens"
+    ],
+    "acceptance_test": "password-reset.py",
+    "needed_context": [
+      "authkit/users.py",
+      "authkit/security.py",
+      "migrations/001_users.sql"
+    ],
+    "helpful_context": [
+      "authkit/sessions.py",
+      "migrations/002_sessions.sql",
+      "authkit/db.py",
+      "tests/test_users.py",
+      "tests/conftest.py",
+      "authkit/clock.py"
+    ]
+  },
+  {
+    "id": "login-lockout",
+    "title": "Lock accounts after repeated failed logins",
+    "difficulty": "medium",
+    "tags": [
+      "migration",
+      "stateful",
+      "tests-required"
+    ],
+    "task": "Lock an account after 5 consecutive failed logins. Change `authkit.users.authenticate` to `authenticate(conn, email, password, now=None)`, where `now` is an optional timezone-aware UTC `datetime` (default: the current time). Every wrong password for an existing email counts as a failure and the 5th consecutive failure still raises `AuthenticationError`. From then on, for 15 minutes after that 5th failure, every call for that email raises `AccountLockedError` (a subclass of `UserError`, defined in `authkit/users.py`) even if the password is correct. A successful login resets the failure count. Unknown emails keep raising `AuthenticationError` and never lock anything. Persist the state in the database with a new numbered SQL migration in `migrations/`. Add pytest tests.",
+    "requirements": [
+      "authenticate accepts an optional now argument",
+      "The 5th consecutive failure raises AuthenticationError; later calls within 15 minutes raise AccountLockedError even with the right password",
+      "AccountLockedError subclasses UserError and is defined in authkit/users.py",
+      "After 15 minutes the account can log in again",
+      "A successful login resets the consecutive-failure count",
+      "Unknown emails raise AuthenticationError and never lock",
+      "The failure state is persisted via a new numbered migration that applies on a fresh database",
+      "pytest tests cover locking, expiry of the lock and the counter reset"
+    ],
+    "acceptance_test": "login-lockout.py",
+    "needed_context": [
+      "authkit/users.py",
+      "migrations/001_users.sql"
+    ],
+    "helpful_context": [
+      "authkit/db.py",
+      "tests/test_users.py",
+      "tests/conftest.py",
+      "authkit/clock.py"
+    ]
+  },
+  {
+    "id": "delete-account",
+    "title": "Delete a user account",
+    "difficulty": "medium",
+    "tags": [
+      "foreign-keys",
+      "tests-required"
+    ],
+    "task": "Add `delete_user(conn, user_id) -> bool` to `authkit/users.py`. It deletes the user and returns `True`, or returns `False` if there is no such user. The user's login sessions (table `sessions`) must be deleted too, so that `authkit.sessions.get_session_user` returns `None` for their old tokens and nothing is left behind. Afterwards the same email address can be registered again. Foreign keys are enforced by the database connection. Add pytest tests.",
+    "requirements": [
+      "delete_user(conn, user_id) exists in authkit/users.py and returns True when a user was deleted, False otherwise",
+      "The user's sessions are deleted and their old session tokens no longer resolve to a user",
+      "Deleting a user that has sessions does not raise a foreign-key error",
+      "The email can be registered again after deletion",
+      "pytest tests cover deleting a user with sessions and a missing user"
+    ],
+    "acceptance_test": "delete-account.py",
+    "needed_context": [
+      "authkit/users.py",
+      "migrations/002_sessions.sql"
+    ],
+    "helpful_context": [
+      "authkit/sessions.py",
+      "migrations/001_users.sql",
+      "authkit/db.py",
+      "tests/test_users.py",
+      "tests/conftest.py"
+    ]
+  },
+  {
+    "id": "login-form-validation",
+    "title": "Client-side validation on the login form",
+    "difficulty": "medium",
+    "tags": [
+      "browser",
+      "playwright",
+      "tests-required"
+    ],
+    "task": "Add client-side validation to the login form in `web/login.html` (form `#login-form`, fields `#email` and `#password`, message element `#error`). On submit: if the email does not contain an `@`, show the text `Enter a valid email address` in `#error` (remove its `hidden` attribute) and cancel the submit. Otherwise, if the password is empty, show `Password is required` in `#error` and cancel the submit. If both are valid, hide `#error` again (set `hidden`) and let the submit continue. Use plain JavaScript in the page with no external libraries. Add Playwright tests using pytest-playwright's `page` fixture that load the page from a `file://` URL.",
+    "requirements": [
+      "Submitting an email without @ shows 'Enter a valid email address' in #error and cancels the submit",
+      "Submitting a valid email with an empty password shows 'Password is required' in #error and cancels the submit",
+      "Submitting valid values hides #error",
+      "No external libraries or network access are used",
+      "Playwright tests load web/login.html from file:// and cover both error messages and the valid case"
+    ],
+    "acceptance_test": "login-form-validation.py",
+    "needed_context": [
+      "web/login.html"
+    ],
+    "helpful_context": []
+  }
+]

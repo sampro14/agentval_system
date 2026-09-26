@@ -1,19 +1,37 @@
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncIterator, Callable
+import os
+import re
+from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from agenteval.config import Settings
+from agenteval.config import Settings, get_settings
 from agenteval.execution.checks import JUNIT_REPORT
 from agenteval.execution.docker.sandbox import ExecutionResult
 from agenteval.llm.provider import FakeProvider
 from agenteval.storage.db import make_engine, make_sessionmaker
 from agenteval.storage.models import Base
+
+
+@pytest.fixture(autouse=True)
+def hermetic_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[None]:
+    """Tests must not depend on the developer's shell or their .env file.
+
+    Settings reads AGENTEVAL_* variables from the environment and from a .env in the working
+    directory, so a value set there (say AGENTEVAL_LLM_MODEL) would otherwise change test outcomes.
+    """
+    for name in [n for n in os.environ if n.startswith("AGENTEVAL_")]:
+        monkeypatch.delenv(name)
+    monkeypatch.chdir(tmp_path)  # no .env here
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
 
 PLAN = {
     "goal": "add function",
@@ -23,12 +41,16 @@ DRAFT = {"summary": "add add()", "files": [{"path": "calc.py", "content": "def a
 COVERED = {"requirement": "add() returns the sum", "implemented": True, "tested": True, "evidence": "test_add"}
 
 
-def scripted_llm(review: dict[str, Any] | None = None, analysis: dict[str, Any] | None = None) -> FakeProvider:
+def scripted_llm(
+    review: dict[str, Any] | None = None,
+    analysis: dict[str, Any] | None = None,
+    research: dict[str, Any] | None = None,
+) -> FakeProvider:
     def respond(system: str, _prompt: str) -> str:
         if "planning agent" in system:
             return json.dumps(PLAN)
         if "research agent" in system:
-            return json.dumps({"relevant_files": [], "notes": "empty repo"})
+            return json.dumps(research or {"files": []})
         if "validation agent" in system:
             return json.dumps(review or {"requirements": [COVERED], "issues": []})
         if "failure analyzer" in system:
@@ -82,7 +104,11 @@ class FakeSandbox:
             cases = outcome
         code = 5 if not cases else (1 if "failed" in cases.values() else 0)
         if cases:
-            (Path(workspace) / JUNIT_REPORT).write_text(junit_xml(cases))
+            # Like real pytest, write the report to whatever --junitxml= path the command asked for.
+            match = re.search(r"--junitxml=(\S+)", command)
+            report = Path(workspace) / (match.group(1) if match else JUNIT_REPORT)
+            report.parent.mkdir(parents=True, exist_ok=True)
+            report.write_text(junit_xml(cases))
         stdout = "no tests ran" if code == 5 else ("1 passed" if code == 0 else "FAILED test_calc.py::test_add")
         return ExecutionResult(command=command, exit_code=code, stdout=stdout, stderr="", duration_ms=5)
 

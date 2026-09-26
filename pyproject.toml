@@ -2,7 +2,6 @@
 name = "agenteval"
 version = "0.1.0"
 description = "Multi-agent reliability & evaluation platform"
-readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 dependencies = [
@@ -11,7 +10,9 @@ dependencies = [
     "asyncpg>=0.31.0",
     "docker>=7.2.0",
     "fastapi>=0.141.1",
+    "google-genai>=2.25.0",
     "langgraph>=1.2.12",
+    "openai>=3.19.2",
     "pydantic-settings>=2.15.0",
     "redis>=8.1.0",
     "sqlalchemy[asyncio]>=2.1.1",
@@ -44,7 +45,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = ["agenteval/storage/migrations/versions"]
+extend-exclude = ["agenteval/storage/migrations/versions", "datasets"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]

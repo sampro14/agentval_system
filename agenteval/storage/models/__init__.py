@@ -40,6 +40,18 @@ class Run(Base):
     total_latency_ms: Mapped[int | None] = mapped_column(Integer)
     final_score: Mapped[float | None] = mapped_column(Float)
 
+    @property
+    def provider(self) -> str | None:
+        return self.model_config_.get("llm_provider")
+
+    @property
+    def model(self) -> str | None:
+        return self.model_config_.get("llm_model")
+
+    @property
+    def task_id(self) -> str | None:
+        return self.model_config_.get("task_id")
+
 
 class AgentEvent(Base):
     __tablename__ = "agent_events"

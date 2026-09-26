@@ -3,16 +3,28 @@
 from __future__ import annotations
 
 import difflib
+import shutil
 from pathlib import Path
 
 MAX_FILE_BYTES = 50_000
-IGNORED_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", ".venv", ".agenteval"}
+REPORT_DIR = ".agenteval"
+IGNORED_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", ".venv", REPORT_DIR}
 
 
 def create_workspace(root: str, run_id: str) -> Path:
     path = Path(root) / run_id
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def seed_workspace(source: Path, workspace: Path) -> None:
+    """Copy a template (or a solution overlay) into a workspace, leaving caches and reports behind."""
+    shutil.copytree(
+        source,
+        workspace,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", REPORT_DIR),
+    )
 
 
 def _resolve(workspace: Path, relative: str) -> Path:
