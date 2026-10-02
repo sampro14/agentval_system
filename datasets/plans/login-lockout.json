@@ -1,0 +1,42 @@
+{
+  "goal": "Lock accounts after repeated failed logins",
+  "tasks": [
+    {
+      "id": "T1",
+      "description": "Add a migration adding failed_logins and locked_until columns to users.",
+      "dependencies": [],
+      "files_to_touch": [],
+      "new_files": [
+        "migrations/003_login_lockout.sql"
+      ],
+      "expected_output": "new migration",
+      "validation_criteria": "applies on a fresh database"
+    },
+    {
+      "id": "T2",
+      "description": "Add AccountLockedError and change authenticate(conn, email, password, now=None): lock for 15 minutes after the 5th consecutive failure; a successful login resets the count; unknown emails never lock.",
+      "dependencies": [
+        "T1"
+      ],
+      "files_to_touch": [
+        "authkit/users.py"
+      ],
+      "new_files": [],
+      "expected_output": "lockout logic",
+      "validation_criteria": "locks after five failures, unlocks after 15 minutes, success resets the count"
+    },
+    {
+      "id": "T3",
+      "description": "Add tests for locking, lock expiry and unknown emails.",
+      "dependencies": [
+        "T2"
+      ],
+      "files_to_touch": [],
+      "new_files": [
+        "tests/test_lockout.py"
+      ],
+      "expected_output": "new test file",
+      "validation_criteria": "the tests pass"
+    }
+  ]
+}

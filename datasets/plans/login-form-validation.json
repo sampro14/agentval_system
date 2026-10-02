@@ -1,0 +1,29 @@
+{
+  "goal": "Client-side validation on the login form",
+  "tasks": [
+    {
+      "id": "T1",
+      "description": "Add a submit handler to web/login.html: show 'Enter a valid email address' or 'Password is required' in #error and cancel the submit when invalid; hide #error when valid.",
+      "dependencies": [],
+      "files_to_touch": [
+        "web/login.html"
+      ],
+      "new_files": [],
+      "expected_output": "validation script",
+      "validation_criteria": "invalid input shows the message and cancels the submit"
+    },
+    {
+      "id": "T2",
+      "description": "Add Playwright tests that load the page from file:// and cover both messages and the valid case.",
+      "dependencies": [
+        "T1"
+      ],
+      "files_to_touch": [],
+      "new_files": [
+        "tests/test_login_form.py"
+      ],
+      "expected_output": "new test file",
+      "validation_criteria": "the tests pass"
+    }
+  ]
+}

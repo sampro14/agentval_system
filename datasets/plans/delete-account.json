@@ -1,0 +1,29 @@
+{
+  "goal": "Delete a user account",
+  "tasks": [
+    {
+      "id": "T1",
+      "description": "Add delete_user(conn, user_id) -> bool to authkit/users.py: delete the user's sessions first (foreign keys are enforced), then the user; return False if there is no such user.",
+      "dependencies": [],
+      "files_to_touch": [
+        "authkit/users.py"
+      ],
+      "new_files": [],
+      "expected_output": "delete_user",
+      "validation_criteria": "user and sessions are gone, the email can be registered again"
+    },
+    {
+      "id": "T2",
+      "description": "Add tests for deleting a user with sessions, a missing user and re-registration.",
+      "dependencies": [
+        "T1"
+      ],
+      "files_to_touch": [],
+      "new_files": [
+        "tests/test_delete_account.py"
+      ],
+      "expected_output": "new test file",
+      "validation_criteria": "the tests pass"
+    }
+  ]
+}

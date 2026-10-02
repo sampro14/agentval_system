@@ -1,0 +1,29 @@
+{
+  "goal": "Validate email addresses at registration",
+  "tasks": [
+    {
+      "id": "T1",
+      "description": "Define InvalidEmailError(UserError) in authkit/users.py and make register() reject malformed emails (one @, non-empty local part, no whitespace, a dotted domain with non-empty labels).",
+      "dependencies": [],
+      "files_to_touch": [
+        "authkit/users.py"
+      ],
+      "new_files": [],
+      "expected_output": "validation in register",
+      "validation_criteria": "invalid emails raise InvalidEmailError, valid ones still register lower-cased"
+    },
+    {
+      "id": "T2",
+      "description": "Add tests for valid and invalid emails.",
+      "dependencies": [
+        "T1"
+      ],
+      "files_to_touch": [],
+      "new_files": [
+        "tests/test_email_validation.py"
+      ],
+      "expected_output": "new test file",
+      "validation_criteria": "the tests pass"
+    }
+  ]
+}

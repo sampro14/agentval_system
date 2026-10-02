@@ -51,16 +51,12 @@ def read_files(workspace: Path, paths: list[str]) -> dict[str, str]:
     return contents
 
 
-def write_file(workspace: Path, relative: str, content: str) -> dict[str, object]:
-    """Write a file and return an artifact record containing its unified diff."""
-    target = _resolve(workspace, relative)
-    before = target.read_text(errors="replace") if target.exists() else ""
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(content)
+def make_artifact(relative: str, before: str, after: str) -> dict[str, object]:
+    """The artifact record (unified diff and line counts) for a file changing from `before` to `after`."""
     diff = "".join(
         difflib.unified_diff(
             before.splitlines(keepends=True),
-            content.splitlines(keepends=True),
+            after.splitlines(keepends=True),
             fromfile=f"a/{relative}",
             tofile=f"b/{relative}",
         )
@@ -68,3 +64,12 @@ def write_file(workspace: Path, relative: str, content: str) -> dict[str, object
     added = sum(1 for line in diff.splitlines() if line.startswith("+") and not line.startswith("+++"))
     removed = sum(1 for line in diff.splitlines() if line.startswith("-") and not line.startswith("---"))
     return {"path": relative, "created": not before, "lines_added": added, "lines_removed": removed, "diff": diff}
+
+
+def write_file(workspace: Path, relative: str, content: str) -> dict[str, object]:
+    """Write a file and return an artifact record containing its unified diff."""
+    target = _resolve(workspace, relative)
+    before = target.read_text(errors="replace") if target.exists() else ""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content)
+    return make_artifact(relative, before, content)

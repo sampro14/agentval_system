@@ -1,0 +1,451 @@
+[
+  {
+    "id": "pr-no-migration",
+    "kind": "fault",
+    "task_id": "password-reset",
+    "split": "dev",
+    "description": "the token table's migration was never written",
+    "plan": "password-reset",
+    "overlay": false,
+    "remove": [
+      "migrations/003_password_reset_tokens.sql"
+    ],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "ll-four-tries",
+    "kind": "fault",
+    "task_id": "login-lockout",
+    "split": "dev",
+    "description": "locks after 4 failed logins, not 5",
+    "plan": "login-lockout",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "cp-no-old-check",
+    "kind": "fault",
+    "task_id": "change-password",
+    "split": "dev",
+    "description": "never checks the old password",
+    "plan": "change-password",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "ev-syntax-error",
+    "kind": "fault",
+    "task_id": "email-validation",
+    "split": "dev",
+    "description": "a syntax error in the validator",
+    "plan": "email-validation",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "ev-imports-requests",
+    "kind": "fault",
+    "task_id": "email-validation",
+    "split": "heldout",
+    "description": "imports the `requests` package, which is not installed",
+    "plan": "email-validation",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "da-breaks-authenticate",
+    "kind": "fault",
+    "task_id": "delete-account",
+    "split": "dev",
+    "description": "authenticate now accepts any password (breaks existing behaviour)",
+    "plan": "delete-account",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "da-no-tests",
+    "kind": "fault",
+    "task_id": "delete-account",
+    "split": "dev",
+    "description": "correct code but the new tests were never written (caught by evidence, no LLM needed)",
+    "plan": "delete-account",
+    "overlay": false,
+    "remove": [
+      "tests/test_delete_account.py"
+    ],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": true,
+      "failed_checks": [
+        "tests_written"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "pr-plaintext-token",
+    "kind": "fault",
+    "task_id": "password-reset",
+    "split": "dev",
+    "description": "reset tokens are stored in plaintext (spec says only a hash)",
+    "plan": "password-reset",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "ll-no-reset",
+    "kind": "fault",
+    "task_id": "login-lockout",
+    "split": "heldout",
+    "description": "a successful login does not reset the failure count",
+    "plan": "login-lockout",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "lf-no-cancel",
+    "kind": "fault",
+    "task_id": "login-form-validation",
+    "split": "heldout",
+    "description": "shows the error but does not cancel the submit",
+    "plan": "login-form-validation",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "id": "pr-plan-omits-migration",
+    "kind": "fault",
+    "task_id": "password-reset",
+    "split": "dev",
+    "description": "the PLAN forgot the migration, and the code followed the plan",
+    "plan": "password-reset-no-migration",
+    "overlay": false,
+    "remove": [
+      "migrations/003_password_reset_tokens.sql"
+    ],
+    "settings": {},
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "PLANNING",
+      "stage": "planner"
+    }
+  },
+  {
+    "id": "sandbox-missing-image",
+    "kind": "fault",
+    "task_id": "change-password",
+    "split": "heldout",
+    "description": "the sandbox image does not exist (the code is fine)",
+    "plan": "change-password",
+    "overlay": false,
+    "remove": [],
+    "settings": {
+      "sandbox_image": "agenteval-does-not-exist:latest"
+    },
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "ENVIRONMENT",
+      "stage": "execute"
+    }
+  },
+  {
+    "id": "timeout-infinite-loop",
+    "kind": "fault",
+    "task_id": "email-validation",
+    "split": "dev",
+    "description": "an infinite loop in the validator (a code bug that shows up as a timeout)",
+    "plan": "email-validation",
+    "overlay": true,
+    "remove": [],
+    "settings": {
+      "sandbox_timeout_s": 15
+    },
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "CODE_GENERATION",
+      "stage": "draft"
+    }
+  },
+  {
+    "kind": "fault",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "id": "rp-regression-after-repair",
+    "task_id": "login-lockout",
+    "split": "dev",
+    "plan": "login-lockout",
+    "description": "an earlier repair fixed one thing but broke the lockout limit (locks after 4, not 5)",
+    "overlay_from": "ll-four-tries",
+    "history": "after_repair",
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "regression_safety"
+      ],
+      "category": "REPAIR",
+      "stage": "repair"
+    }
+  },
+  {
+    "kind": "fault",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "id": "da-schema-context-missed",
+    "task_id": "delete-account",
+    "split": "dev",
+    "plan": "delete-account",
+    "description": "research never showed the sessions schema, so the coder guessed a wrong column name (owner_id)",
+    "research_files": [
+      "authkit/users.py",
+      "tests/test_users.py",
+      "tests/conftest.py"
+    ],
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "RETRIEVAL",
+      "category_alternates": [
+        "CONTEXT"
+      ],
+      "stage": "research"
+    }
+  },
+  {
+    "kind": "fault",
+    "overlay": true,
+    "remove": [],
+    "settings": {},
+    "id": "pr-plan-omits-expiry",
+    "task_id": "password-reset",
+    "split": "heldout",
+    "plan": "password-reset-no-expiry",
+    "description": "the PLAN forgot the one-hour expiry, and the code followed the plan",
+    "expected": {
+      "execution_passes": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "category": "PLANNING",
+      "stage": "planner"
+    }
+  },
+  {
+    "id": "control-change-password",
+    "kind": "control",
+    "task_id": "change-password",
+    "split": "heldout",
+    "description": "the reference solution: must be accepted",
+    "plan": "change-password",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  },
+  {
+    "id": "control-email-validation",
+    "kind": "control",
+    "task_id": "email-validation",
+    "split": "dev",
+    "description": "the reference solution: must be accepted",
+    "plan": "email-validation",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  },
+  {
+    "id": "control-password-reset",
+    "kind": "control",
+    "task_id": "password-reset",
+    "split": "dev",
+    "description": "the reference solution: must be accepted",
+    "plan": "password-reset",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  },
+  {
+    "id": "control-login-lockout",
+    "kind": "control",
+    "task_id": "login-lockout",
+    "split": "heldout",
+    "description": "the reference solution: must be accepted",
+    "plan": "login-lockout",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  },
+  {
+    "id": "control-delete-account",
+    "kind": "control",
+    "task_id": "delete-account",
+    "split": "heldout",
+    "description": "the reference solution: must be accepted",
+    "plan": "delete-account",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  },
+  {
+    "id": "control-login-form-validation",
+    "kind": "control",
+    "task_id": "login-form-validation",
+    "split": "dev",
+    "description": "the reference solution: must be accepted",
+    "plan": "login-form-validation",
+    "overlay": false,
+    "remove": [],
+    "settings": {},
+    "expected": {
+      "execution_passes": true,
+      "detected": false,
+      "failed_checks": [],
+      "category": null,
+      "stage": null
+    }
+  }
+]
