@@ -12,7 +12,10 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from agenteval.llm.provider import parse_json
+from pydantic import BaseModel, Field
+
+from agenteval.agents.common import complete_json
+from agenteval.execution.workspace import list_files
 from agenteval.orchestration.deps import Deps
 from agenteval.orchestration.state import AgentEvalState
 
@@ -34,11 +37,28 @@ SANDBOX_ERROR_MARKERS = ("No such image", "pull access denied", "OCI runtime", "
 MISSING_MODULE = re.compile(r"No module named '([\w.]+)'")
 
 SYSTEM = f"""You are the failure analyzer in a multi-agent software-engineering workflow.
-Given the evidence of a failed validation, the plan and a summary of the agent trajectory, identify the
-root cause and which stage is responsible. failure_type must be one of: {", ".join(CATEGORIES)}.
+A solution was rejected. Decide the root cause and which stage is responsible: blame the earliest stage whose
+output was wrong or incomplete. failure_type must be one of: {", ".join(CATEGORIES)}.
+- PLANNING: the plan left out or misstated a requirement, and the code faithfully followed the plan.
+- RETRIEVAL or CONTEXT: the research step did not give the coder a file it needed, and the failure is explained
+  by information that file held. Compare "files_the_coder_was_shown" with "repository_files_not_shown" and the
+  error. Blame this only when a specific file or table the coder was not shown explains the failure; an ordinary
+  logic bug is CODE_GENERATION even if some related file was not shown.
+- CODE_GENERATION: the coder had what it needed but wrote wrong, missing or incomplete code or tests, including
+  code that hangs or loops forever.
+- ENVIRONMENT: the sandbox or test runner itself failed, so the code was never really exercised.
+- REPAIR: an earlier repair attempt broke behaviour that used to work.
 Respond with only a JSON object:
 {{"failure_type": str, "root_cause": str, "confidence": number between 0 and 1,
   "evidence": [str], "recommended_action": str}}"""
+
+
+class Analysis(BaseModel):
+    failure_type: str = "UNKNOWN"
+    root_cause: str = ""
+    confidence: float = 0.5
+    evidence: list[str] = Field(default_factory=list)
+    recommended_action: str = ""
 
 
 @dataclass
@@ -98,15 +118,28 @@ def rule_candidates(state: AgentEvalState) -> list[Attribution]:
                 )
             )
         if check["timed_out"]:
-            candidates.append(
-                Attribution(
-                    "ENVIRONMENT",
-                    f"'{check['name']}' timed out",
-                    0.6,
-                    [f"timeout after {check['duration_ms']} ms"],
-                    "Check for hanging tests or infinite loops, or raise the sandbox timeout",
+            compile_ok = checks.get("compile", {}).get("passed", False)
+            if check["name"] == "pytest" and compile_ok:
+                # The same sandbox just ran the compile check fine, so it is working: the tests hung.
+                candidates.append(
+                    Attribution(
+                        "CODE_GENERATION",
+                        "The tests did not finish although the sandbox works: the code likely loops or waits forever",
+                        0.8,
+                        [f"pytest timed out after {check['duration_ms']} ms; compile passed in the same sandbox"],
+                        "Look for an unbounded loop, wait or recursion in the changed code",
+                    )
                 )
-            )
+            else:
+                candidates.append(
+                    Attribution(
+                        "ENVIRONMENT",
+                        f"'{check['name']}' timed out",
+                        0.6,
+                        [f"timeout after {check['duration_ms']} ms"],
+                        "Check for hanging tests or infinite loops, or raise the sandbox timeout",
+                    )
+                )
 
     compile_check = checks.get("compile")
     if compile_check and not compile_check["passed"] and not compile_check["timed_out"]:
@@ -156,6 +189,17 @@ def rule_candidates(state: AgentEvalState) -> list[Attribution]:
                     "Fix the implementation (or incorrect tests) using the failing assertions",
                 )
             )
+
+    if "tests_written" in validation.get("failed_checks", []):
+        candidates.append(
+            Attribution(
+                "CODE_GENERATION",
+                "No test files were written",
+                0.9,
+                ["the validator's tests_written check failed: no test file was written in this run"],
+                "Write pytest tests in test_*.py files covering every requirement",
+            )
+        )
 
     regressed = validation["evidence"].get("regressions", [])
     if regressed and state.get("repairs"):
@@ -212,6 +256,22 @@ def responsible_stage(category: str, repaired: bool) -> str:
     }.get(category, "unknown")
 
 
+def coder_context(state: AgentEvalState) -> dict[str, list[str]]:
+    """Which files research gave the coder, and which other files the repository holds.
+
+    Without this the analyzer cannot tell "the coder ignored something it saw" from "the coder never saw it".
+    """
+    shown: list[str] | None = None
+    for event in state.get("trajectory", []):
+        if event["agent"] == "research" and "files_selected" in event["output"]:
+            shown = list(event["output"]["files_selected"])
+    if shown is None:
+        return {}
+    written = {a["path"] for a in state.get("artifacts", [])}
+    others = [f for f in list_files(Path(state["workspace"])) if f not in shown and f not in written]
+    return {"files_the_coder_was_shown": shown, "repository_files_not_shown": others}
+
+
 async def llm_attribution(state: AgentEvalState, deps: Deps, candidates: list[Attribution]) -> Attribution:
     execution = state["execution_results"][-1]
     evidence = {
@@ -221,6 +281,8 @@ async def llm_attribution(state: AgentEvalState, deps: Deps, candidates: list[At
         ],
         "tests": {k: v for k, v in (execution.get("tests") or {}).items() if k != "passed_tests"},
         "validation": state["validation_results"][-1],
+        "files_written": [a["path"] for a in state.get("artifacts", [])],
+        **coder_context(state),
         "rule_candidates": [asdict(c) for c in candidates],
     }
     trajectory = [f"{e['agent']}: {e['event_type']} ({e['status']})" for e in state.get("trajectory", [])]
@@ -228,18 +290,14 @@ async def llm_attribution(state: AgentEvalState, deps: Deps, candidates: list[At
         f"Task:\n{state['task']}\n\nPlan:\n{json.dumps(state.get('plan', {}))}\n\n"
         f"Trajectory:\n{json.dumps(trajectory)}\n\nEvidence:\n{json.dumps(evidence)}"
     )
-    result = parse_json((await deps.llm.complete(SYSTEM, prompt)).text)
-    category = str(result.get("failure_type", "UNKNOWN")).upper()
-    try:
-        confidence = min(max(float(result.get("confidence", 0.5)), 0.0), 1.0)
-    except (TypeError, ValueError):
-        confidence = 0.5
+    result, _attempts = await complete_json(deps.llm, SYSTEM, prompt, Analysis.model_validate, who="failure analyzer")
+    category = result.failure_type.upper()
     return Attribution(
         category=category if category in CATEGORIES else "UNKNOWN",
-        root_cause=str(result.get("root_cause", "")),
-        confidence=confidence,
-        evidence=[str(e) for e in result.get("evidence", [])],
-        recommended_action=str(result.get("recommended_action", "")),
+        root_cause=result.root_cause,
+        confidence=min(max(result.confidence, 0.0), 1.0),
+        evidence=result.evidence,
+        recommended_action=result.recommended_action,
     )
 
 

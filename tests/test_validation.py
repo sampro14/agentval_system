@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agenteval.agents.failure_analyzer.agent import analyze_failure, rule_candidates
-from agenteval.agents.validator.agent import regressions
+from agenteval.agents.validator import agent as validator_agent
+from agenteval.agents.validator.agent import (
+    is_test_file,
+    regressions,
+    review_requirements,
+    validate,
+)
 from agenteval.config import Settings
 from agenteval.execution.checks import plan_checks
 from agenteval.execution.docker.sandbox import ExecutionResult
 from agenteval.execution.reports import parse_junit
-from agenteval.llm.provider import FakeProvider
+from agenteval.llm.provider import FakeProvider, ReplayProvider
 from agenteval.orchestration.deps import Deps
 from agenteval.storage.repositories.runs import RunRepository, TrajectoryRepository
 from agenteval.workers.run_worker import execute_run
@@ -247,3 +255,66 @@ async def test_sandbox_error_is_recorded_as_evidence(
     async with sessions() as session:
         (failure,) = await TrajectoryRepository(session).failures(run_id)
     assert (failure.category, failure.stage, failure.attribution_method) == ("ENVIRONMENT", "execute", "rule")
+
+
+# --- what was written, and a review that can be retried -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("tests/test_users.py", True),
+        ("test_calc.py", True),
+        ("pkg/users_test.py", True),
+        ("tests/conftest.py", False),
+        ("authkit/users.py", False),
+        ("tests/test_data.json", False),
+        ("web/login.html", False),
+    ],
+)
+def test_is_test_file(path: str, expected: bool) -> None:
+    assert is_test_file(path) is expected
+
+
+def test_tests_written_looks_at_what_was_written_not_the_total_test_count() -> None:
+    artifacts = [{"path": "authkit/users.py"}, {"path": "tests/test_reset.py"}, {"path": "tests/test_reset.py"}]
+    assert validator_agent.tests_written(artifacts) == ["tests/test_reset.py"]
+    assert validator_agent.tests_written([{"path": "authkit/users.py"}]) == []
+
+
+async def test_new_code_without_new_tests_fails_even_though_old_tests_pass(tmp_path: Path) -> None:
+    state: dict[str, Any] = {
+        "task": "t",
+        "plan": {},
+        "artifacts": [{"path": "authkit/users.py", "diff": "+x"}],
+        "execution_results": [
+            {"passed": True, "tests": {"total": 16, "passed": 16, "passed_tests": ["a"], "failures": []}}
+        ],
+    }
+    llm = FakeProvider()
+    result = (await validate(state, Deps(settings=Settings(), llm=llm, sandbox=FakeSandbox([0]))))[
+        "validation_results"
+    ][-1]  # type: ignore[arg-type]
+
+    assert result["failed_checks"] == ["tests_written"]
+    assert result["checks"]["test_presence"] is True  # the old tests satisfy this one; that is the point
+    assert llm.calls == [] and result["evidence"]["requirements_review"].startswith("skipped")
+
+
+async def test_a_malformed_review_is_retried_with_the_reason() -> None:
+    good = {"requirements": [{"requirement": "r", "implemented": True, "tested": True, "evidence": "e"}], "issues": []}
+    llm = ReplayProvider([{"response": '{"requirements": "none"}'}, {"response": json.dumps(good)}])
+    state: dict[str, Any] = {"task": "t", "plan": {}, "artifacts": []}
+    deps = Deps(settings=Settings(), llm=llm, sandbox=FakeSandbox([0]))
+
+    review = await review_requirements(state, deps, {"passed_tests": []})  # type: ignore[arg-type]
+
+    assert [r.requirement for r in review.requirements] == ["r"]
+    assert "previous reply was rejected" in llm.calls[1][1]
+
+
+async def test_a_review_that_stays_malformed_fails_clearly() -> None:
+    llm = FakeProvider(lambda s, p: "no idea")
+    deps = Deps(settings=Settings(), llm=llm, sandbox=FakeSandbox([0]))
+    with pytest.raises(ValueError, match="validator output still invalid after 2 attempts"):
+        await review_requirements({"task": "t", "plan": {}, "artifacts": []}, deps, {})  # type: ignore[arg-type]

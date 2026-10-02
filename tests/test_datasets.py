@@ -12,6 +12,7 @@ from agenteval.apps.api.main import create_app
 from agenteval.config import Settings
 from agenteval.datasets import DATASETS_ROOT, SAMPLE_APP, Task, get_task, load_tasks
 from agenteval.evaluation.acceptance import ACCEPTANCE_DIR, run_acceptance
+from agenteval.execution.checks import uses_browser
 from agenteval.execution.docker.sandbox import DockerSandbox, docker_available
 from agenteval.execution.reports import parse_junit
 from agenteval.execution.workspace import list_files, seed_workspace
@@ -114,7 +115,9 @@ async def test_acceptance_fails_untouched_and_passes_with_reference(task_id: str
 
     before = await _run_pytest(untouched, ".acceptance/test_acceptance.py", image)
     after = await _run_pytest(solved, ".acceptance/test_acceptance.py", image)
-    own_tests = await _run_pytest(solved, "tests", settings.sandbox_image)
+    # The reference's own tests may need the browser image, exactly as the executor would decide.
+    own_image = settings.sandbox_browser_image if uses_browser(solved) else settings.sandbox_image
+    own_tests = await _run_pytest(solved, "tests", own_image)
 
     assert before is not None and (before["passed"] < before["total"] or before["errors"]), (
         "must fail without a solution"

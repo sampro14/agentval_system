@@ -176,7 +176,7 @@ async def test_draft_is_scored_against_the_hidden_acceptance_test(tmp_path: Path
     card = drafted.scorecard
     assert card is not None and card["kind"] == "draft"
     assert (card["acceptance_passed"], card["acceptance_tests_passed"], card["acceptance_tests_total"]) == (True, 2, 2)
-    assert card["files_written"] == ["calc.py"]
+    assert card["files_written"] == ["calc.py", "test_calc.py"]
     assert not (tmp_path / TASK / "workspace" / ".acceptance").exists()  # the hidden test never stays behind
     assert "acceptance=PASS (2/2 hidden tests)" in render(drafted, brief=True)
 
@@ -202,7 +202,7 @@ async def test_rerunning_the_coder_starts_from_the_untouched_app(tmp_path: Path,
     assert "workspace reset" in again.notes[0]
     assert "def register(" in (workspace / "authkit" / "users.py").read_text()  # restored, not built upon
     state = json.loads((tmp_path / TASK / "state.json").read_text())
-    assert len(state["artifacts"]) == 1  # this draft only, not the earlier one as well
+    assert len(state["artifacts"]) == 2  # this draft only (calc.py and its test), not the earlier one as well
     assert [e["agent"] for e in state["trajectory"]] == ["planner", "research", "draft"]  # execute was forgotten
     assert not (tmp_path / TASK / "execute.result.json").exists()
     assert (tmp_path / TASK / "research.result.json").exists()  # earlier stages are kept

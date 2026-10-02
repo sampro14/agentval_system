@@ -37,7 +37,13 @@ PLAN = {
     "goal": "add function",
     "tasks": [{"id": "T1", "description": "write add() returning the sum", "dependencies": []}],
 }
-DRAFT = {"summary": "add add()", "files": [{"path": "calc.py", "content": "def add(a, b):\n    return a + b\n"}]}
+DRAFT = {
+    "summary": "add add()",
+    "files": [
+        {"path": "calc.py", "content": "def add(a, b):\n    return a + b\n"},
+        {"path": "test_calc.py", "content": "from calc import add\n\n\ndef test_add():\n    assert add(2, 3) == 5\n"},
+    ],
+}
 COVERED = {"requirement": "add() returns the sum", "implemented": True, "tested": True, "evidence": "test_add"}
 
 
