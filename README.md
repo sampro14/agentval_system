@@ -20,6 +20,14 @@ Don't just ask *"did the agent succeed?"*: find out **where** it went wrong, **w
 
 ---
 
+## Demo
+
+Two real runs against the actual `authkit` benchmark app, driven by Gemini through the live dashboard — not staged, not mocked.
+
+![AgentEval dashboard walkthrough: a clean pass with a real diff and sandboxed test run, then a run that fails, gets diagnosed, and repairs itself](docs/media/demo.gif)
+
+The second run genuinely failed on its first attempt (an empty draft), was attributed to the `CODE_GENERATION` stage with 95% confidence, and recovered after one repair — exactly the kind of trajectory a single pass/fail number would hide.
+
 ## Why AgentEval?
 
 Most agent benchmarks report a single number: *"task success rate: 82%."* That number can't tell you why the
@@ -40,18 +48,21 @@ Plan → Research → Draft → Execute → Validate → Diagnose → Repair →
 - **Nothing is hidden behind one score.** The goal is a multi-dimensional reliability scorecard, not a single
   opaque number.
 
-## ✨ Features
+## What this project demonstrates
 
-| | |
-|---|---|
-| 🧭 **Multi-agent workflow** | Planner, researcher, coder, executor, validator, failure analyzer and repairer, wired together with [LangGraph](https://github.com/langchain-ai/langgraph), including a bounded repair loop. |
-| 🔒 **Sandboxed execution** | CPU, memory, PID and time limits, no network, and the container is removed after each run. Playwright tests get a separate headless-Chromium image. |
-| ✅ **Evidence-first validation** | Checks based only on evidence (functional correctness, tests present, no regressions) run first. An LLM reviews coverage afterwards, and it can fail a run but never override a failing test. |
-| 🩺 **Failure attribution** | Rule-based classifier with an LLM fallback (confidence < 0.8). Every failure records a category, the responsible agent, whether a rule or the model decided, and a recommended action. |
-| 🔁 **Bounded repair loop** | Failed attempts are diagnosed and the coder is re-run with the failure record as feedback, up to a configurable limit. |
-| 🔌 **Multiple LLM providers** | Anthropic, OpenAI, Gemini, DeepSeek, or an offline `fake` provider for demos and tests. Providers can be switched per run. |
-| 📊 **Live dashboard** | Next.js UI to start runs, watch the pipeline progress, and inspect each agent's prompt, raw reply and result. |
-| 🧪 **Fault injection** | Score the failure-handling agents against known-broken solutions with known answers, on separate dev and held-out splits. |
+- **Multi-agent orchestration** — seven agents (planner, researcher, coder, executor, validator, failure
+  analyzer, repairer) composed as a stateful graph in [LangGraph](https://github.com/langchain-ai/langgraph),
+  with a bounded retry loop instead of an open-ended agent runtime.
+- **Evidence over self-report** — every "did it work?" question is answered by something that actually ran
+  (compile, pytest, a hidden acceptance test in a sandbox), never by asking the model.
+- **A hybrid classifier, not just an LLM wrapper** — failure attribution runs deterministic rules first and
+  only calls an LLM when confidence is below a threshold, with every decision tagged by which path produced it.
+- **An evaluator that evaluates itself** — a [fault-injection harness](#-command-line-tools) plants 22 known
+  bugs into reference solutions and scores whether the validator and failure analyzer catch and correctly
+  attribute each one, on held-out splits never tuned against.
+- **A full delivery, not a notebook** — FastAPI + Postgres + Redis-backed async workers on the backend, a
+  Next.js dashboard on the front end, Alembic migrations, and a pytest suite that runs offline against a fake
+  LLM and fake sandbox (no API key or Docker required for CI).
 
 ## 🧩 How it works
 
@@ -129,7 +140,9 @@ GEMINI_API_KEY=...                    # the key for the provider you chose
 AGENTEVAL_ENABLE_DEV_ENDPOINTS=true   # needed for the "One agent at a time" page
 ```
 
-> **No API key?** Set `AGENTEVAL_LLM_PROVIDER=fake` to run the whole pipeline offline with canned responses.
+> **No API key?** Set `AGENTEVAL_LLM_PROVIDER=fake` to exercise the full pipeline offline with canned
+> responses. It's useful for seeing the mechanics end to end, but the draft it writes is a fixed stub — point
+> it at a real provider to see the agents work on the actual `authkit` tasks.
 
 Then start three processes, each in its own terminal:
 
