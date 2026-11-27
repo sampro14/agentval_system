@@ -12,7 +12,7 @@ Seven agents plan, code, test and repair. A locked-down Docker sandbox, not the 
 ![Docker](https://img.shields.io/badge/sandbox-Docker-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-[How it works](#how-it-works) · [Quick start](#quick-start) · [Command-line tools](#command-line-tools) · [Dashboard](#dashboard) · [Roadmap](#roadmap)
+[Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) · [Command-line tools](#command-line-tools) · [Dashboard](#dashboard) · [Roadmap](#roadmap)
 
 <img src="docs/media/demo.gif" alt="AgentEval dashboard walkthrough: a clean pass with a real diff and sandboxed test run, then a run that fails, gets diagnosed, and repairs itself" width="860" />
 
@@ -20,9 +20,9 @@ Seven agents plan, code, test and repair. A locked-down Docker sandbox, not the 
 
 Two real runs against the `authkit` benchmark app, driven by Gemini through the live dashboard, not staged or mocked. The second run genuinely failed on its first attempt (an empty draft), was attributed to the `CODE_GENERATION` stage with 95% confidence, and recovered after one repair — exactly the kind of trajectory a single pass/fail number would hide.
 
-| **7 agents** | **Execution is ground truth** | **16 planted bugs + 6 controls** | **Runs offline in CI** |
+| **7 agents** | **Execution is ground truth** | **15/15 caught, 0/9 false alarms** | **Runs offline in CI** |
 |:---:|:---:|:---:|:---:|
-| planner → researcher → coder → executor → validator → failure analyzer → repairer, with a bounded repair loop | generated code runs in Docker with no network and CPU, memory, process and time limits | the evaluator must catch and correctly attribute each bug, and pass the untouched controls; a held-out split is kept for the final check | fake LLM and fake sandbox, so the test suite needs no API key or Docker |
+| planner → researcher → coder → executor → validator → failure analyzer → repairer, with a bounded repair loop | generated code runs in Docker with no network and CPU, memory, process and time limits | on held-out planted bugs and clean controls, 3 runs each; the right agent was blamed in 12 of 15 ([results](#results)) | fake LLM and fake sandbox, so the test suite needs no API key or Docker |
 
 ## The problem
 
@@ -55,10 +55,36 @@ Plan → Research → Draft → Execute → Validate → Diagnose → Repair →
   only calls an LLM when confidence is below a threshold, with every decision tagged by which path produced it.
 - **An evaluator that evaluates itself** — a [fault-injection harness](#command-line-tools) plants 16 known
   bugs (plus 6 untouched controls) into reference solutions and scores whether the validator and failure analyzer catch and correctly
-  attribute each one, on held-out splits never tuned against.
+  attribute each one, on held-out splits never tuned against ([results](#results)).
 - **A full delivery, not a notebook** — FastAPI + Postgres + Redis-backed async workers on the backend, a
   Next.js dashboard on the front end, Alembic migrations, and a pytest suite that runs offline against a fake
   LLM and fake sandbox (no API key or Docker required for CI).
+
+## Results
+
+Held-out split of the fault suite: 5 planted bugs and 3 untouched controls, each run 3 times with Gemini 3.8 Flash
+(27 Nov 2026). The evaluator was never tuned on these cases.
+
+| Agent under test | Measure | Result |
+|---|---|---|
+| Validator | Bug runs caught | **15 / 15** |
+| Validator | Clean controls wrongly flagged | **0 / 9** |
+| Failure analyzer | Right failure category and right agent blamed | **12 / 15** (rules 6/6, LLM 6/9) |
+| Validator | Cost per run | about 1,100 tokens and 4 s |
+
+What these numbers don't show:
+
+- **The sample is small.** Five bugs and three controls make this a check, not a benchmark.
+- **One blind spot.** All three attribution misses are the same case, `pr-plan-omits-expiry`: the plan left out the
+  one-hour reset-token expiry, the code followed the plan, and the LLM blamed the coder instead of the planner.
+- **Confidence isn't calibrated.** The analyzer's average confidence was 0.95 when it was wrong and 0.91 when it was
+  right, so its scores shouldn't be read as probabilities yet.
+- **One model.** These are Gemini 3.8 Flash results; `--provider` runs the same cases on Anthropic, OpenAI or DeepSeek.
+
+```bash
+uv run python -m agenteval.dev.faults validate --split heldout --repeat 3
+uv run python -m agenteval.dev.faults analyze  --split heldout --repeat 3
+```
 
 ## How it works
 
@@ -257,6 +283,7 @@ browser image.
 - [ ] **3. Evaluation**: stage-level metrics engine, reliability scorecard, OpenTelemetry tracing
 - [ ] **4. Recovery**: targeted repair agent, retry policy, recovery metrics
 - [ ] **6. Research**: benchmark dataset, baselines, ablation studies
+- [ ] **7. Attribution**: tell planning faults from code faults (the held-out miss) and calibrate confidence
 
 ## License
 
