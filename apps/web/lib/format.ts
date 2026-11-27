@@ -19,6 +19,11 @@ export function timeAgo(iso: string, now = Date.now()): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+/** A recorded run's date, for the replay site, where "5 weeks ago" would read as stale. */
+export function recordedOn(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function elapsedMs(start: string | null, end: string | null, now = Date.now()): number | null {
   if (!start) return null;
   return (end ? new Date(end).getTime() : now) - new Date(start).getTime();

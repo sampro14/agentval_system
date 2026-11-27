@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Pipeline } from "@/components/Pipeline";
+import { ReplayBar } from "@/components/Replay";
 import { Timeline } from "@/components/Timeline";
 import { AcceptanceBadge, Banner, Card, Chip, Metric, StatusBadge } from "@/components/ui";
-import { api, isTerminal, type AgentEvent, type Failure, type Metric as MetricRow, type Run, type Task } from "@/lib/api";
+import { api, isTerminal, REPLAY, type AgentEvent, type Failure, type Metric as MetricRow, type Run, type Task } from "@/lib/api";
 import { elapsedMs, fmtMs, fmtNumber } from "@/lib/format";
 
 const POLL_MS = 1500;
@@ -115,6 +116,8 @@ export default function RunPage() {
               <span className="mono">{run.id.slice(0, 8)}</span>
             </p>
           </div>
+
+          {REPLAY ? <ReplayBar id={id} running={running} /> : null}
 
           <details>
             <summary className="muted">Task</summary>

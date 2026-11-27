@@ -1,15 +1,13 @@
 // Typed client for the AgentEval API. The browser calls it directly (CORS is enabled on the API side).
+// A replay build (NEXT_PUBLIC_REPLAY=1) reads recorded runs from static files instead: see lib/replay.ts.
+
+import { ApiError } from "./errors";
+import { replayApi } from "./replay";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+export const REPLAY = process.env.NEXT_PUBLIC_REPLAY === "1";
 
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
-}
+export { ApiError };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Json = any; // event outputs are free-form JSON produced by the agents
@@ -182,7 +180,7 @@ const post = <T>(path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-export const api = {
+const liveApi = {
   runs: (limit = 50) => request<Run[]>(`/api/v1/runs?limit=${limit}`),
   run: (id: string) => request<Run>(`/api/v1/runs/${id}`),
   trajectory: (id: string, afterSeq = 0) =>
@@ -199,6 +197,8 @@ export const api = {
   runStage: (body: { agent: string; task_id: string; provider?: string; model?: string; fresh?: boolean }) =>
     post<StageResult>("/api/v1/dev/stages", body),
 };
+
+export const api: typeof liveApi = REPLAY ? replayApi : liveApi;
 
 export const TERMINAL_STATUSES = ["succeeded", "recovered", "failed", "error"];
 export const isTerminal = (status: string) => TERMINAL_STATUSES.includes(status);

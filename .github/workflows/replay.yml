@@ -1,0 +1,57 @@
+name: replay-site
+
+# Publishes the dashboard as a read-only replay of recorded runs to GitHub Pages.
+# The runs come from apps/web/public/replay, written by `uv run python -m agenteval.dev.replay`.
+# One-time setup: Settings -> Pages -> Source: GitHub Actions.
+on:
+  push:
+    branches: [main]
+    paths: ["apps/web/**", ".github/workflows/replay.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: data
+        run: |
+          if [ -f apps/web/public/replay/runs.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No recorded runs in apps/web/public/replay yet, so there is nothing to publish."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.data.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - if: steps.data.outputs.present == 'true'
+        working-directory: apps/web
+        run: npm ci && npm run build
+        env:
+          NEXT_PUBLIC_REPLAY: "1"
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+      - if: steps.data.outputs.present == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.data.outputs.present == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: apps/web/out
+      - if: steps.data.outputs.present == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
