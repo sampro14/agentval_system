@@ -1,0 +1,419 @@
+{
+ "run": {
+  "id": "3e2cd30a-ea39-4434-9b27-cdac9e06e418",
+  "task": "Lock an account after 5 consecutive failed logins. Change `authkit.users.authenticate` to `authenticate(conn, email, password, now=None)`, where `now` is an optional timezone-aware UTC `datetime` (default: the current time). Every wrong password for an existing email counts as a failure and the 5th consecutive failure still raises `AuthenticationError`. From then on, for 15 minutes after that 5th failure, every call for that email raises `AccountLockedError` (a subclass of `UserError`, defined in `authkit/users.py`) even if the password is correct. A successful login resets the failure count. Unknown emails keep raising `AuthenticationError` and never lock anything. Persist the state in the database with a new numbered SQL migration in `migrations/`. Add pytest tests.",
+  "workflow": "software_engineering",
+  "workflow_version": "0.1.0",
+  "provider": "gemini",
+  "model": "gemini-3.8-flash",
+  "task_id": "login-lockout",
+  "status": "succeeded",
+  "error": null,
+  "created_at": "2026-09-26T09:35:44.514952Z",
+  "started_at": "2026-09-26T09:38:07.167203Z",
+  "completed_at": "2026-09-26T09:38:25.082764Z",
+  "total_tokens": 10803,
+  "total_latency_ms": 17288,
+  "final_score": 1.0,
+  "acceptance_passed": 1.0
+ },
+ "trajectory": [
+  {
+   "id": "evt_6d81bd2ac9f9",
+   "seq": 1,
+   "agent_name": "planner",
+   "event_type": "PLAN_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "task_count": 3,
+    "dangling_dependencies": [],
+    "quality": {
+     "ok": true,
+     "issues": []
+    },
+    "plan": {
+     "goal": "Implement account locking after 5 consecutive failed login attempts for 15 minutes by tracking failed attempts in the database, updating authenticate signature and behavior, and adding tests.",
+     "tasks": [
+      {
+       "id": "T1",
+       "description": "Create database migration 003_lockout.sql adding columns to the users table to track failed login attempts and lockout timestamp.",
+       "dependencies": [],
+       "files_to_touch": [],
+       "new_files": [
+        "migrations/003_lockout.sql"
+       ],
+       "expected_output": "A new migration file migrations/003_lockout.sql altering `users` to add failed login tracking columns (e.g., `failed_attempts` INTEGER DEFAULT 0 and `locked_until` TEXT/TIMESTAMP NULL).",
+       "validation_criteria": "`migrate(conn)` runs cleanly and adds the lockout columns to the `users` table."
+      },
+      {
+       "id": "T2",
+       "description": "Define `AccountLockedError(UserError)` and update `authenticate(conn, email, password, now=None)` in `authkit/users.py` to enforce the 5 consecutive failure lock for 15 minutes, reset failed attempts on successful login, and keep standard authentication failure behavior for unknown emails.",
+       "dependencies": [
+        "T1"
+       ],
+       "files_to_touch": [
+        "authkit/users.py"
+       ],
+       "new_files": [],
+       "expected_output": "`AccountLockedError` class defined and exported; `authenticate` accepts optional `now` (defaulting to current UTC time), verifies whether the account is currently locked, records failed attempts, locks for 15 minutes starting on the 5th failure (raising AuthenticationError on the 5th failure and AccountLockedError on subsequent calls within 15 minutes), resets failures on success, and handles unknown emails without locking.",
+       "validation_criteria": "Calling `authenticate` with wrong passwords triggers lockout logic and raises `AccountLockedError` during the lockout window, resetting upon successful authentication after lockout expires or on regular success."
+      },
+      {
+       "id": "T3",
+       "description": "Add pytest tests in `tests/test_users.py` covering account locking: 5 consecutive failures raising AuthenticationError on the 5th, AccountLockedError on subsequent attempts within 15 minutes (even with correct password), unlocking after 15 minutes, failure count reset on successful login, and unknown email handling.",
+       "dependencies": [
+        "T2"
+       ],
+       "files_to_touch": [
+        "tests/test_users.py"
+       ],
+       "new_files": [],
+       "expected_output": "Comprehensive test cases for `authenticate` lockout mechanics using `now` parameter.",
+       "validation_criteria": "`pytest tests/test_users.py` passes with all existing and new tests succeeding."
+      }
+     ]
+    }
+   },
+   "latency_ms": 3760,
+   "token_usage": {
+    "input": 965,
+    "output": 648,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:10.965043Z"
+  },
+  {
+   "id": "evt_250fb25d4df6",
+   "seq": 2,
+   "agent_name": "research",
+   "event_type": "CONTEXT_GATHERED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "files_available": 19,
+    "files_selected": [
+     "authkit/users.py",
+     "tests/test_users.py",
+     "authkit/clock.py",
+     "migrations/001_users.sql"
+    ],
+    "auto_included": [
+     "authkit/users.py",
+     "tests/test_users.py"
+    ],
+    "llm_selected": [
+     "authkit/clock.py",
+     "migrations/001_users.sql"
+    ],
+    "reasons": {
+     "authkit/users.py": "the plan edits this file",
+     "tests/test_users.py": "the plan edits this file",
+     "authkit/clock.py": "Reuse `utcnow()` and `add_minutes()` for time defaults and lockout expiry calculations.",
+     "migrations/001_users.sql": "Inspect existing `users` table schema and column types to alter it in migration 003."
+    },
+    "unknown_files": [],
+    "empty_skipped": [],
+    "dropped": [],
+    "too_large": [],
+    "bytes_read": 3969,
+    "problems": []
+   },
+   "latency_ms": 1941,
+   "token_usage": {
+    "input": 1190,
+    "output": 93,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:12.914981Z"
+  },
+  {
+   "id": "evt_47e0f54e3992",
+   "seq": 3,
+   "agent_name": "draft",
+   "event_type": "DRAFT_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "summary": "Implement account lockout after 5 consecutive failed logins for 15 minutes, with migration 003_lockout.sql and corresponding tests.",
+    "files_modified": [
+     "migrations/003_lockout.sql",
+     "authkit/users.py",
+     "tests/test_users.py"
+    ],
+    "lines_added": 102,
+    "lines_removed": 4,
+    "plan_check": {
+     "planned_not_written": [],
+     "written_not_planned": []
+    },
+    "diffs": {
+     "migrations/003_lockout.sql": "--- a/migrations/003_lockout.sql\n+++ b/migrations/003_lockout.sql\n@@ -0,0 +1,2 @@\n+ALTER TABLE users ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0;\n+ALTER TABLE users ADD COLUMN locked_until TEXT;\n",
+     "authkit/users.py": "--- a/authkit/users.py\n+++ b/authkit/users.py\n@@ -1,7 +1,9 @@\n \"\"\"User registration and authentication.\"\"\"\n \n+from datetime import datetime\n import sqlite3\n \n+from authkit.clock import add_minutes, utcnow\n from authkit.security import hash_password, verify_password\n \n MIN_PASSWORD_LENGTH = 8\n@@ -17,6 +19,10 @@\n \n class AuthenticationError(UserError):\n     \"\"\"Wrong email or password.\"\"\"\n+\n+\n+class AccountLockedError(UserError):\n+    \"\"\"The account is locked due to too many failed attempts.\"\"\"\n \n \n def register(conn: sqlite3.Connection, email: str, password: str) -> int:\n@@ -45,9 +51,41 @@\n     return row\n \n \n-def authenticate(conn: sqlite3.Connection, email: str, password: str) -> int:\n-    \"\"\"Return the user id for valid credentials, otherwise raise AuthenticationError.\"\"\"\n+def authenticate(conn: sqlite3.Connection, email: str, password: str, now: datetime | None = None) -> int:\n+    \"\"\"Return the user id for valid credentials, otherwise raise AuthenticationError or AccountLockedError.\"\"\"\n+    if now is None:\n+        now = utcnow()\n+\n     row = get_user_by_email(conn, email)\n-    if row is None or not verify_password(password, row[\"password_hash\"]):\n+    if row is None:\n         raise AuthenticationError(\"invalid credentials\")\n-    return int(row[\"id\"])\n+\n+    user_id = int(row[\"id\"])\n+    locked_until_str = row[\"locked_until\"]\n+    if locked_until_str is not None:\n+        locked_until = datetime.fromisoformat(locked_until_str)\n+        if now < locked_until:\n+            raise AccountLockedError(\"account is locked\")\n+\n+    if not verify_password(password, row[\"password_hash\"]):\n+        failed_attempts = int(row[\"failed_attempts\"]) + 1\n+        if failed_attempts >= 5:\n+            lock_time = add_minutes(now, 15).isoformat()\n+            conn.execute(\n+                \"UPDATE users SET failed_attempts = ?, locked_until = ? WHERE id = ?\",\n+                (failed_attempts, lock_time, user_id),\n+            )\n+        else:\n+            conn.execute(\n+                \"UPDATE users SET failed_attempts = ? WHERE id = ?\",\n+                (failed_attempts, user_id),\n+            )\n+        conn.commit()\n+        raise AuthenticationError(\"invalid credentials\")\n+\n+    conn.execute(\n+        \"UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE id = ?\",\n+        (user_id,),\n+    )\n+    conn.commit()\n+    return user_id\n",
+     "tests/test_users.py": "--- a/tests/test_users.py\n+++ b/tests/test_users.py\n@@ -1,3 +1,4 @@\n+from datetime import UTC, datetime, timedelta\n import sqlite3\n \n import pytest\n@@ -5,6 +6,7 @@\n from authkit.db import migrate\n from authkit.sessions import create_session, get_session_user\n from authkit.users import (\n+    AccountLockedError,\n     AuthenticationError,\n     DuplicateUserError,\n     UserError,\n@@ -44,6 +46,62 @@\n         authenticate(conn, \"nobody@example.com\", \"correct-horse\")\n \n \n+def test_authenticate_lockout_after_five_failed_attempts(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"locked@example.com\", \"correct-horse\")\n+    base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)\n+\n+    # First 4 failed attempts raise AuthenticationError\n+    for i in range(4):\n+        with pytest.raises(AuthenticationError):\n+            authenticate(conn, \"locked@example.com\", f\"wrong-{i}\", now=base_time)\n+\n+    # 5th failed attempt still raises AuthenticationError\n+    with pytest.raises(AuthenticationError):\n+        authenticate(conn, \"locked@example.com\", \"wrong-5\", now=base_time)\n+\n+    # From then on, for 15 minutes, calls raise AccountLockedError even with correct password\n+    with pytest.raises(AccountLockedError):\n+        authenticate(conn, \"locked@example.com\", \"correct-horse\", now=base_time + timedelta(minutes=5))\n+\n+    with pytest.raises(AccountLockedError):\n+        authenticate(conn, \"locked@example.com\", \"wrong-password\", now=base_time + timedelta(minutes=14, seconds=59))\n+\n+    # After 15 minutes, account can be authenticated\n+    after_lockout = base_time + timedelta(minutes=15)\n+    assert authenticate(conn, \"locked@example.com\", \"correct-horse\", now=after_lockout) == user_id\n+\n+\n+def test_successful_login_resets_failure_count(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"reset@example.com\", \"correct-horse\")\n+    base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)\n+\n+    for _ in range(4):\n+        with pytest.raises(AuthenticationError):\n+            authenticate(conn, \"reset@example.com\", \"wrong-password\", now=base_time)\n+\n+    # Successful login resets the counter\n+    assert authenticate(conn, \"reset@example.com\", \"correct-horse\", now=base_time) == user_id\n+\n+    # 4 more failed attempts shouldn't lock\n+    for _ in range(4):\n+        with pytest.raises(AuthenticationError):\n+            authenticate(conn, \"reset@example.com\", \"wrong-password\", now=base_time)\n+\n+    # 5th will lock\n+    with pytest.raises(AuthenticationError):\n+        authenticate(conn, \"reset@example.com\", \"wrong-password\", now=base_time)\n+\n+    with pytest.raises(AccountLockedError):\n+        authenticate(conn, \"reset@example.com\", \"correct-horse\", now=base_time + timedelta(minutes=1))\n+\n+\n+def test_unknown_email_never_locks(conn: sqlite3.Connection) -> None:\n+    base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)\n+    for _ in range(10):\n+        with pytest.raises(AuthenticationError):\n+            authenticate(conn, \"nonexistent@example.com\", \"wrong-password\", now=base_time)\n+\n+\n def test_session_roundtrip(conn: sqlite3.Connection) -> None:\n     user_id = register(conn, \"a@example.com\", \"correct-horse\")\n     token = create_session(conn, user_id)\n"
+    }
+   },
+   "latency_ms": 7850,
+   "token_usage": {
+    "input": 2231,
+    "output": 2378,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:20.772726Z"
+  },
+  {
+   "id": "evt_206754dc9702",
+   "seq": 4,
+   "agent_name": "execute",
+   "event_type": "EXECUTION_PASSED",
+   "status": "ok",
+   "output": {
+    "checks": [
+     {
+      "name": "compile",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m compileall -q .",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 160,
+      "timed_out": false,
+      "passed": true
+     },
+     {
+      "name": "pytest",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m pytest -q --tb=short -p no:cacheprovider --junitxml=.agenteval/pytest.xml",
+      "exit_code": 0,
+      "stdout": "...................                                                      [100%]\n19 passed in 0.32s\n",
+      "stderr": "",
+      "duration_ms": 517,
+      "timed_out": false,
+      "passed": true
+     }
+    ],
+    "tests": {
+     "total": 19,
+     "passed": 19,
+     "failed": 0,
+     "errors": 0,
+     "skipped": 0,
+     "failures": []
+    },
+    "passed": true
+   },
+   "latency_ms": 695,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-09-26T09:38:21.475264Z"
+  },
+  {
+   "id": "evt_7712a9a73dd3",
+   "seq": 5,
+   "agent_name": "validate",
+   "event_type": "VALIDATION_PASSED",
+   "status": "ok",
+   "output": {
+    "passed": true,
+    "checks": {
+     "functional_correctness": true,
+     "test_presence": true,
+     "regression_safety": true,
+     "requirement_coverage": true,
+     "test_coverage": true
+    },
+    "failed_checks": [],
+    "requirements": [
+     {
+      "requirement": "Persist the state in the database with a new numbered SQL migration in migrations/.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Created migrations/003_lockout.sql adding failed_attempts and locked_until columns; verified during migrate(conn) run across test suite."
+     },
+     {
+      "requirement": "Change authkit.users.authenticate signature to authenticate(conn, email, password, now=None) where now is an optional timezone-aware UTC datetime defaulting to the current time.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Defined authenticate(conn: sqlite3.Connection, email: str, password: str, now: datetime | None = None) in authkit/users.py, defaulting now to utcnow(). Exercised in tests with now provided and default."
+     },
+     {
+      "requirement": "Define AccountLockedError as a subclass of UserError in authkit/users.py.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "class AccountLockedError(UserError) defined in authkit/users.py and imported in tests."
+     },
+     {
+      "requirement": "Every wrong password for an existing email counts as a failure, and the 5th consecutive failure still raises AuthenticationError.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Incremented failed_attempts on bad password and raised AuthenticationError on the 5th attempt in authenticate(); tested in test_authenticate_lockout_after_five_failed_attempts."
+     },
+     {
+      "requirement": "From the 5th failure on, for 15 minutes, every call for that email raises AccountLockedError even if the password is correct.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Checked locked_until in authenticate() and raised AccountLockedError if now < locked_until; tested in test_authenticate_lockout_after_five_failed_attempts with correct and wrong passwords."
+     },
+     {
+      "requirement": "A successful login resets the failure count and lockout state.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Executed UPDATE users SET failed_attempts = 0, locked_until = NULL upon successful password verification; tested in test_successful_login_resets_failure_count and test_authenticate_lockout_after_five_failed_attempts."
+     },
+     {
+      "requirement": "Unknown emails keep raising AuthenticationError and never lock anything.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Checked row is None first and raised AuthenticationError without updating database; tested in test_unknown_email_never_locks."
+     }
+    ],
+    "issues": [],
+    "evidence": {
+     "tests_total": 19,
+     "tests_passed": 19,
+     "regressions": [],
+     "requirements_review": "llm"
+    }
+   },
+   "latency_ms": 3042,
+   "token_usage": {
+    "input": 2645,
+    "output": 653,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:24.521785Z"
+  },
+  {
+   "id": "evt_e85834ec9c86",
+   "seq": 6,
+   "agent_name": "evaluate",
+   "event_type": "RUN_EVALUATED",
+   "status": "ok",
+   "output": {
+    "task_success": true,
+    "first_pass_success": true,
+    "recovered": false,
+    "repair_iterations": 0,
+    "failures": 0,
+    "tests_total": 19,
+    "tests_passed": 19,
+    "llm_calls": 4,
+    "input_tokens": 7031,
+    "output_tokens": 3772,
+    "total_tokens": 10803,
+    "total_latency_ms": 17288,
+    "failure_categories": []
+   },
+   "latency_ms": 0,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-09-26T09:38:24.530463Z"
+  }
+ ],
+ "failures": [],
+ "evaluation": [
+  {
+   "metric": "acceptance_passed",
+   "score": 1.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_passed",
+   "score": 6.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_total",
+   "score": 6.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "retrieval_recall",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_precision",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_missed",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_irrelevant",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "task_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "first_pass_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "recovered",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "repair_iterations",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "failures",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_total",
+   "score": 19.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_passed",
+   "score": 19.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "llm_calls",
+   "score": 4.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "input_tokens",
+   "score": 7031.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "output_tokens",
+   "score": 3772.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_tokens",
+   "score": 10803.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_latency_ms",
+   "score": 17288.0,
+   "evaluator": "run_metrics_v1"
+  }
+ ]
+}

@@ -1,0 +1,399 @@
+{
+ "run": {
+  "id": "db167090-1ed0-402d-805d-9f137d04dbe1",
+  "task": "Add a function `change_password(conn, user_id, old_password, new_password)` to `authkit/users.py`. It must verify `old_password` against the stored hash and raise `AuthenticationError` if it is wrong (or the user does not exist). The new password must satisfy the same minimum-length rule as registration; otherwise raise `UserError`. On success store a freshly hashed `new_password`. Add pytest tests for it.",
+  "workflow": "software_engineering",
+  "workflow_version": "0.1.0",
+  "provider": "gemini",
+  "model": "gemini-3.8-flash",
+  "task_id": "change-password",
+  "status": "succeeded",
+  "error": null,
+  "created_at": "2026-11-27T21:55:39.429226Z",
+  "started_at": "2026-11-27T21:55:39.508762Z",
+  "completed_at": "2026-11-27T21:56:04.995810Z",
+  "total_tokens": 8868,
+  "total_latency_ms": 24650,
+  "final_score": 1.0,
+  "acceptance_passed": 1.0
+ },
+ "trajectory": [
+  {
+   "id": "evt_00bace14ed4a",
+   "seq": 1,
+   "agent_name": "planner",
+   "event_type": "PLAN_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "task_count": 2,
+    "dangling_dependencies": [],
+    "quality": {
+     "ok": true,
+     "issues": []
+    },
+    "plan": {
+     "goal": "Implement `change_password` in `authkit/users.py` with validation and error handling, and add pytest test coverage.",
+     "tasks": [
+      {
+       "id": "T1",
+       "description": "Implement `change_password(conn, user_id, old_password, new_password)` in `authkit/users.py`. Check if the user exists and verify `old_password` using `verify_password`; raise `AuthenticationError` if the user is missing or the password does not match. Validate that `new_password` meets `MIN_PASSWORD_LENGTH`, raising `UserError` if invalid. Update the user record with the freshly hashed `new_password` via `hash_password`.",
+       "dependencies": [],
+       "files_to_touch": [
+        "authkit/users.py"
+       ],
+       "new_files": [],
+       "expected_output": "`change_password` function defined and exported in `authkit/users.py` with authentication check, length validation, and password hash update.",
+       "validation_criteria": "`change_password` raises `AuthenticationError` for nonexistent user or wrong old password, raises `UserError` for passwords shorter than `MIN_PASSWORD_LENGTH`, and updates the password hash in the database on success."
+      },
+      {
+       "id": "T2",
+       "description": "Add unit tests for `change_password` in `tests/test_users.py` covering successful password change, verification of the new password via `authenticate`, rejection of wrong `old_password` (`AuthenticationError`), non-existent `user_id` (`AuthenticationError`), and short `new_password` (`UserError`).",
+       "dependencies": [
+        "T1"
+       ],
+       "files_to_touch": [
+        "tests/test_users.py"
+       ],
+       "new_files": [],
+       "expected_output": "Comprehensive test cases added to `tests/test_users.py` covering success and error paths of `change_password`.",
+       "validation_criteria": "All new and existing tests in `tests/test_users.py` pass when run with pytest."
+      }
+     ]
+    }
+   },
+   "latency_ms": 4798,
+   "token_usage": {
+    "input": 917,
+    "output": 504,
+    "llm_calls": 1
+   },
+   "created_at": "2026-11-27T21:55:44.396513Z"
+  },
+  {
+   "id": "evt_5c04d7791e3f",
+   "seq": 2,
+   "agent_name": "research",
+   "event_type": "CONTEXT_GATHERED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "files_available": 22,
+    "files_selected": [
+     "authkit/users.py",
+     "tests/test_users.py",
+     "authkit/security.py",
+     "migrations/001_users.sql",
+     "tests/conftest.py"
+    ],
+    "auto_included": [
+     "authkit/users.py",
+     "tests/test_users.py"
+    ],
+    "llm_selected": [
+     "authkit/security.py",
+     "migrations/001_users.sql",
+     "tests/conftest.py"
+    ],
+    "reasons": {
+     "authkit/users.py": "the plan edits this file",
+     "tests/test_users.py": "the plan edits this file",
+     "authkit/security.py": "hash_password and verify_password functions to verify old_password and hash new_password",
+     "migrations/001_users.sql": "Exact column names (e.g. password_hash, id) for the UPDATE query on table users",
+     "tests/conftest.py": "conn fixture definition for writing pytest tests interacting with the test database"
+    },
+    "unknown_files": [],
+    "empty_skipped": [],
+    "dropped": [],
+    "too_large": [],
+    "bytes_read": 4834,
+    "problems": []
+   },
+   "latency_ms": 2511,
+   "token_usage": {
+    "input": 1129,
+    "output": 149,
+    "llm_calls": 1
+   },
+   "created_at": "2026-11-27T21:55:46.919761Z"
+  },
+  {
+   "id": "evt_292db0c69439",
+   "seq": 3,
+   "agent_name": "draft",
+   "event_type": "DRAFT_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "summary": "Implement `change_password` in `authkit/users.py` and add corresponding tests in `tests/test_users.py`.",
+    "files_modified": [
+     "authkit/users.py",
+     "tests/test_users.py"
+    ],
+    "lines_added": 41,
+    "lines_removed": 0,
+    "plan_check": {
+     "planned_not_written": [],
+     "written_not_planned": []
+    },
+    "diffs": {
+     "authkit/users.py": "--- a/authkit/users.py\n+++ b/authkit/users.py\n@@ -51,3 +51,16 @@\n     if row is None or not verify_password(password, row[\"password_hash\"]):\n         raise AuthenticationError(\"invalid credentials\")\n     return int(row[\"id\"])\n+\n+\n+def change_password(conn: sqlite3.Connection, user_id: int, old_password: str, new_password: str) -> None:\n+    row = get_user(conn, user_id)\n+    if row is None or not verify_password(old_password, row[\"password_hash\"]):\n+        raise AuthenticationError(\"invalid credentials\")\n+    if len(new_password) < MIN_PASSWORD_LENGTH:\n+        raise UserError(f\"password must be at least {MIN_PASSWORD_LENGTH} characters\")\n+    conn.execute(\n+        \"UPDATE users SET password_hash = ? WHERE id = ?\",\n+        (hash_password(new_password), user_id),\n+    )\n+    conn.commit()\n",
+     "tests/test_users.py": "--- a/tests/test_users.py\n+++ b/tests/test_users.py\n@@ -9,6 +9,7 @@\n     DuplicateUserError,\n     UserError,\n     authenticate,\n+    change_password,\n     get_user,\n     register,\n )\n@@ -49,3 +50,30 @@\n     token = create_session(conn, user_id)\n     assert get_session_user(conn, token) == user_id\n     assert get_session_user(conn, \"not-a-token\") is None\n+\n+\n+def test_change_password_success(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"a@example.com\", \"old-secret-password\")\n+    change_password(conn, user_id, \"old-secret-password\", \"new-secret-password\")\n+    assert authenticate(conn, \"a@example.com\", \"new-secret-password\") == user_id\n+    with pytest.raises(AuthenticationError):\n+        authenticate(conn, \"a@example.com\", \"old-secret-password\")\n+\n+\n+def test_change_password_wrong_old_password(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"a@example.com\", \"old-secret-password\")\n+    with pytest.raises(AuthenticationError):\n+        change_password(conn, user_id, \"incorrect-password\", \"new-secret-password\")\n+    assert authenticate(conn, \"a@example.com\", \"old-secret-password\") == user_id\n+\n+\n+def test_change_password_nonexistent_user(conn: sqlite3.Connection) -> None:\n+    with pytest.raises(AuthenticationError):\n+        change_password(conn, 9999, \"old-secret-password\", \"new-secret-password\")\n+\n+\n+def test_change_password_short_new_password(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"a@example.com\", \"old-secret-password\")\n+    with pytest.raises(UserError):\n+        change_password(conn, user_id, \"old-secret-password\", \"short\")\n+    assert authenticate(conn, \"a@example.com\", \"old-secret-password\") == user_id\n"
+    }
+   },
+   "latency_ms": 11490,
+   "token_usage": {
+    "input": 2311,
+    "output": 1748,
+    "llm_calls": 1
+   },
+   "created_at": "2026-11-27T21:55:58.416631Z"
+  },
+  {
+   "id": "evt_a2dceba5a0f1",
+   "seq": 4,
+   "agent_name": "execute",
+   "event_type": "EXECUTION_PASSED",
+   "status": "ok",
+   "output": {
+    "checks": [
+     {
+      "name": "compile",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m compileall -q .",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 342,
+      "timed_out": false,
+      "passed": true
+     },
+     {
+      "name": "pytest",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m pytest -q --tb=short -p no:cacheprovider --junitxml=.agenteval/pytest.xml",
+      "exit_code": 0,
+      "stdout": "....................                                                     [100%]\n20 passed in 0.46s\n",
+      "stderr": "",
+      "duration_ms": 1074,
+      "timed_out": false,
+      "passed": true
+     }
+    ],
+    "tests": {
+     "total": 20,
+     "passed": 20,
+     "failed": 0,
+     "errors": 0,
+     "skipped": 0,
+     "failures": []
+    },
+    "passed": true
+   },
+   "latency_ms": 1445,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-11-27T21:55:59.878513Z"
+  },
+  {
+   "id": "evt_b92db3d9cfa9",
+   "seq": 5,
+   "agent_name": "validate",
+   "event_type": "VALIDATION_PASSED",
+   "status": "ok",
+   "output": {
+    "passed": true,
+    "checks": {
+     "functional_correctness": true,
+     "test_presence": true,
+     "tests_written": true,
+     "regression_safety": true,
+     "requirement_coverage": true,
+     "test_coverage": true
+    },
+    "failed_checks": [],
+    "requirements": [
+     {
+      "requirement": "Add `change_password(conn, user_id, old_password, new_password)` to `authkit/users.py`.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "`change_password` is defined in `authkit/users.py` and exercised across multiple tests in `tests/test_users.py`."
+     },
+     {
+      "requirement": "Verify `old_password` against stored hash and raise `AuthenticationError` if invalid or if user does not exist.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Implemented check `if row is None or not verify_password(old_password, row['password_hash']): raise AuthenticationError(...)`; tested by `test_change_password_wrong_old_password` and `test_change_password_nonexistent_user`."
+     },
+     {
+      "requirement": "Verify `new_password` meets minimum length requirement (MIN_PASSWORD_LENGTH), raising `UserError` otherwise.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Implemented check `if len(new_password) < MIN_PASSWORD_LENGTH: raise UserError(...)`; tested by `test_change_password_short_new_password`."
+     },
+     {
+      "requirement": "Store a freshly hashed `new_password` on success and commit the update.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Database updated with `hash_password(new_password)` and committed; tested by `test_change_password_success`."
+     },
+     {
+      "requirement": "Add pytest tests for `change_password` covering success, wrong old password, nonexistent user, and short new password.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Tests `test_change_password_success`, `test_change_password_wrong_old_password`, `test_change_password_nonexistent_user`, and `test_change_password_short_new_password` added and passing."
+     }
+    ],
+    "issues": [],
+    "evidence": {
+     "tests_total": 20,
+     "tests_passed": 20,
+     "tests_written": [
+      "tests/test_users.py"
+     ],
+     "regressions": [],
+     "requirements_review": "llm"
+    }
+   },
+   "latency_ms": 4406,
+   "token_usage": {
+    "input": 1603,
+    "output": 507,
+    "llm_calls": 1
+   },
+   "created_at": "2026-11-27T21:56:04.291292Z"
+  },
+  {
+   "id": "evt_f6d684db387b",
+   "seq": 6,
+   "agent_name": "evaluate",
+   "event_type": "RUN_EVALUATED",
+   "status": "ok",
+   "output": {
+    "task_success": true,
+    "first_pass_success": true,
+    "recovered": false,
+    "repair_iterations": 0,
+    "failures": 0,
+    "tests_total": 20,
+    "tests_passed": 20,
+    "llm_calls": 4,
+    "input_tokens": 5960,
+    "output_tokens": 2908,
+    "total_tokens": 8868,
+    "total_latency_ms": 24650,
+    "failure_categories": []
+   },
+   "latency_ms": 0,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-11-27T21:56:04.309522Z"
+  }
+ ],
+ "failures": [],
+ "evaluation": [
+  {
+   "metric": "acceptance_passed",
+   "score": 1.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_passed",
+   "score": 4.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_total",
+   "score": 4.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "retrieval_recall",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_precision",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_missed",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_irrelevant",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "task_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "first_pass_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "recovered",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "repair_iterations",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "failures",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_total",
+   "score": 20.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_passed",
+   "score": 20.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "llm_calls",
+   "score": 4.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "input_tokens",
+   "score": 5960.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "output_tokens",
+   "score": 2908.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_tokens",
+   "score": 8868.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_latency_ms",
+   "score": 24650.0,
+   "evaluator": "run_metrics_v1"
+  }
+ ]
+}

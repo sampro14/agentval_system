@@ -1,0 +1,422 @@
+{
+ "run": {
+  "id": "454047e1-942a-4681-850a-b140c17e2b07",
+  "task": "Implement a password reset flow in `authkit/`. Add `request_password_reset(conn, email, now=None) -> str | None` which returns a random single-use token valid for 1 hour, or `None` if no user has that email. Add `reset_password(conn, token, new_password, now=None) -> None` which sets the user's new password (same minimum-length rule as registration, otherwise raise `UserError`) and marks the token used. It must raise `InvalidTokenError` (a subclass of `UserError`, defined in `authkit/users.py`) for an unknown, expired or already-used token. `now` is an optional timezone-aware UTC `datetime` (default: the current time) so expiry can be tested. Tokens must never be stored in plaintext, so store only a hash. Persist tokens in a new table created by a new numbered SQL migration in `migrations/`. Add pytest tests covering the whole flow.",
+  "workflow": "software_engineering",
+  "workflow_version": "0.1.0",
+  "provider": "gemini",
+  "model": "gemini-3.8-flash",
+  "task_id": "password-reset",
+  "status": "succeeded",
+  "error": null,
+  "created_at": "2026-09-26T09:35:44.512756Z",
+  "started_at": "2026-09-26T09:37:50.795718Z",
+  "completed_at": "2026-09-26T09:38:07.162099Z",
+  "total_tokens": 12104,
+  "total_latency_ms": 15889,
+  "final_score": 1.0,
+  "acceptance_passed": 1.0
+ },
+ "trajectory": [
+  {
+   "id": "evt_d4ec92aa61ae",
+   "seq": 1,
+   "agent_name": "planner",
+   "event_type": "PLAN_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "task_count": 3,
+    "dangling_dependencies": [],
+    "quality": {
+     "ok": true,
+     "issues": []
+    },
+    "plan": {
+     "goal": "Implement a secure password reset flow with token expiration, hashed token storage, migration, and comprehensive test coverage.",
+     "tasks": [
+      {
+       "id": "T1",
+       "description": "Add migration `003_password_resets.sql` defining a table to store password reset tokens (storing token hash, user_id, expires_at, used_at, created_at).",
+       "dependencies": [],
+       "files_to_touch": [],
+       "new_files": [
+        "migrations/003_password_resets.sql"
+       ],
+       "expected_output": "A valid SQL migration creating the password reset tokens table compatible with sqlite and authkit.db.migrate.",
+       "validation_criteria": "The migration applies cleanly during database migration and creates the password reset table with appropriate schema."
+      },
+      {
+       "id": "T2",
+       "description": "Implement `InvalidTokenError`, `request_password_reset`, and `reset_password` in `authkit/users.py`, using `authkit.clock.utcnow`, `authkit.security.hash_token`, and `authkit.security.hash_password`.",
+       "dependencies": [
+        "T1"
+       ],
+       "files_to_touch": [
+        "authkit/users.py"
+       ],
+       "new_files": [],
+       "expected_output": "`InvalidTokenError` defined as a subclass of `UserError`. `request_password_reset(conn, email, now=None) -> str | None` and `reset_password(conn, token, new_password, now=None) -> None` implemented adhering to specifications (1 hour expiry, hashed storage, single-use, min password length check).",
+       "validation_criteria": "Calling request_password_reset returns a random token or None for non-existent users; reset_password updates password with validation, marks token used, and raises InvalidTokenError on unknown, expired, or reused tokens."
+      },
+      {
+       "id": "T3",
+       "description": "Add pytest tests in `tests/test_password_reset.py` verifying the password reset flow: requesting for existing and non-existing emails, successful password reset, token hashing verification in DB, expiration handling with custom `now`, token reuse prevention, and short password validation.",
+       "dependencies": [
+        "T2"
+       ],
+       "files_to_touch": [],
+       "new_files": [
+        "tests/test_password_reset.py"
+       ],
+       "expected_output": "Comprehensive test suite covering standard success paths and all error conditions of password reset.",
+       "validation_criteria": "All new tests pass under pytest alongside existing test suite without regressions."
+      }
+     ]
+    }
+   },
+   "latency_ms": 3585,
+   "token_usage": {
+    "input": 1003,
+    "output": 609,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:37:54.414658Z"
+  },
+  {
+   "id": "evt_08253b830d79",
+   "seq": 2,
+   "agent_name": "research",
+   "event_type": "CONTEXT_GATHERED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "files_available": 19,
+    "files_selected": [
+     "authkit/users.py",
+     "authkit/clock.py",
+     "authkit/security.py",
+     "migrations/001_users.sql",
+     "migrations/002_sessions.sql",
+     "tests/conftest.py",
+     "tests/test_users.py"
+    ],
+    "auto_included": [
+     "authkit/users.py"
+    ],
+    "llm_selected": [
+     "authkit/clock.py",
+     "authkit/security.py",
+     "migrations/001_users.sql",
+     "migrations/002_sessions.sql",
+     "tests/conftest.py",
+     "tests/test_users.py"
+    ],
+    "reasons": {
+     "authkit/users.py": "the plan edits this file",
+     "authkit/clock.py": "Provides utcnow() and add_minutes() needed for setting token expiration and current time defaults.",
+     "authkit/security.py": "Provides hash_token() and hash_password() for hashing reset tokens and passwords.",
+     "migrations/001_users.sql": "Shows the users table schema and user_id foreign key structure to reference in 003_password_resets.sql.",
+     "migrations/002_sessions.sql": "Shows the previous migration SQL structure and datetime convention for token-based tables.",
+     "tests/conftest.py": "Provides the conn() fixture used across test suites to run migrations against an in-memory database.",
+     "tests/test_users.py": "Shows existing test conventions and user helper usage for testing user authentication and registration."
+    },
+    "unknown_files": [],
+    "empty_skipped": [],
+    "dropped": [],
+    "too_large": [],
+    "bytes_read": 5415,
+    "problems": []
+   },
+   "latency_ms": 2001,
+   "token_usage": {
+    "input": 1213,
+    "output": 233,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:37:56.424580Z"
+  },
+  {
+   "id": "evt_9649173c74c3",
+   "seq": 3,
+   "agent_name": "draft",
+   "event_type": "DRAFT_CREATED",
+   "status": "ok",
+   "output": {
+    "attempts": 1,
+    "summary": "Implement password reset flow with token expiration, hashed storage, migration 003_password_resets.sql, and pytest tests.",
+    "files_modified": [
+     "migrations/003_password_resets.sql",
+     "authkit/users.py",
+     "tests/test_password_reset.py"
+    ],
+    "lines_added": 161,
+    "lines_removed": 1,
+    "plan_check": {
+     "planned_not_written": [],
+     "written_not_planned": []
+    },
+    "diffs": {
+     "migrations/003_password_resets.sql": "--- a/migrations/003_password_resets.sql\n+++ b/migrations/003_password_resets.sql\n@@ -0,0 +1,8 @@\n+CREATE TABLE password_reset_tokens (\n+    id INTEGER PRIMARY KEY AUTOINCREMENT,\n+    user_id INTEGER NOT NULL REFERENCES users (id),\n+    token_hash TEXT NOT NULL UNIQUE,\n+    expires_at TEXT NOT NULL,\n+    used_at TEXT,\n+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n+);\n",
+     "authkit/users.py": "--- a/authkit/users.py\n+++ b/authkit/users.py\n@@ -1,8 +1,11 @@\n \"\"\"User registration and authentication.\"\"\"\n \n+from datetime import datetime, timedelta\n+import secrets\n import sqlite3\n \n-from authkit.security import hash_password, verify_password\n+from authkit.clock import utcnow\n+from authkit.security import hash_password, hash_token, verify_password\n \n MIN_PASSWORD_LENGTH = 8\n \n@@ -17,6 +20,10 @@\n \n class AuthenticationError(UserError):\n     \"\"\"Wrong email or password.\"\"\"\n+\n+\n+class InvalidTokenError(UserError):\n+    \"\"\"The reset token is unknown, expired, or already used.\"\"\"\n \n \n def register(conn: sqlite3.Connection, email: str, password: str) -> int:\n@@ -51,3 +58,55 @@\n     if row is None or not verify_password(password, row[\"password_hash\"]):\n         raise AuthenticationError(\"invalid credentials\")\n     return int(row[\"id\"])\n+\n+\n+def request_password_reset(conn: sqlite3.Connection, email: str, now: datetime | None = None) -> str | None:\n+    \"\"\"Return a random single-use token valid for 1 hour, or None if no user has that email.\"\"\"\n+    user = get_user_by_email(conn, email)\n+    if user is None:\n+        return None\n+\n+    current_time = now if now is not None else utcnow()\n+    expires_at = current_time + timedelta(hours=1)\n+    token = secrets.token_urlsafe(32)\n+    token_digest = hash_token(token)\n+\n+    conn.execute(\n+        \"INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)\",\n+        (user[\"id\"], token_digest, expires_at.isoformat(), current_time.isoformat()),\n+    )\n+    conn.commit()\n+    return token\n+\n+\n+def reset_password(\n+    conn: sqlite3.Connection, token: str, new_password: str, now: datetime | None = None\n+) -> None:\n+    \"\"\"Reset user password using token, marking token used and validating minimum password length.\"\"\"\n+    if len(new_password) < MIN_PASSWORD_LENGTH:\n+        raise UserError(f\"password must be at least {MIN_PASSWORD_LENGTH} characters\")\n+\n+    current_time = now if now is not None else utcnow()\n+    token_digest = hash_token(token)\n+\n+    row: sqlite3.Row | None = conn.execute(\n+        \"SELECT id, user_id, expires_at, used_at FROM password_reset_tokens WHERE token_hash = ?\",\n+        (token_digest,),\n+    ).fetchone()\n+\n+    if row is None or row[\"used_at\"] is not None:\n+        raise InvalidTokenError(\"invalid or already used token\")\n+\n+    expires_at = datetime.fromisoformat(row[\"expires_at\"])\n+    if current_time > expires_at:\n+        raise InvalidTokenError(\"token has expired\")\n+\n+    conn.execute(\n+        \"UPDATE users SET password_hash = ? WHERE id = ?\",\n+        (hash_password(new_password), row[\"user_id\"]),\n+    )\n+    conn.execute(\n+        \"UPDATE password_reset_tokens SET used_at = ? WHERE id = ?\",\n+        (current_time.isoformat(), row[\"id\"]),\n+    )\n+    conn.commit()\n",
+     "tests/test_password_reset.py": "--- a/tests/test_password_reset.py\n+++ b/tests/test_password_reset.py\n@@ -0,0 +1,93 @@\n+from datetime import timedelta\n+import sqlite3\n+\n+import pytest\n+\n+from authkit.clock import utcnow\n+from authkit.users import (\n+    AuthenticationError,\n+    InvalidTokenError,\n+    UserError,\n+    authenticate,\n+    register,\n+    request_password_reset,\n+    reset_password,\n+)\n+\n+\n+def test_request_password_reset_for_nonexistent_email(conn: sqlite3.Connection) -> None:\n+    assert request_password_reset(conn, \"nonexistent@example.com\") is None\n+\n+\n+def test_password_reset_success_flow(conn: sqlite3.Connection) -> None:\n+    user_id = register(conn, \"user@example.com\", \"old-password123\")\n+    token = request_password_reset(conn, \"user@example.com\")\n+    assert token is not None\n+\n+    # Ensure plain token is not stored directly in database\n+    row = conn.execute(\"SELECT * FROM password_reset_tokens WHERE user_id = ?\", (user_id,)).fetchone()\n+    assert row is not None\n+    assert token not in row[\"token_hash\"]\n+    assert row[\"used_at\"] is None\n+\n+    # Reset password successfully\n+    reset_password(conn, token, \"new-secure-password\")\n+\n+    # Old password no longer authenticates, new one does\n+    with pytest.raises(AuthenticationError):\n+        authenticate(conn, \"user@example.com\", \"old-password123\")\n+    assert authenticate(conn, \"user@example.com\", \"new-secure-password\") == user_id\n+\n+    # Token record shows used_at\n+    updated_row = conn.execute(\n+        \"SELECT used_at FROM password_reset_tokens WHERE id = ?\", (row[\"id\"],)\n+    ).fetchone()\n+    assert updated_row is not None and updated_row[\"used_at\"] is not None\n+\n+\n+def test_reset_password_rejects_used_token(conn: sqlite3.Connection) -> None:\n+    register(conn, \"user@example.com\", \"old-password123\")\n+    token = request_password_reset(conn, \"user@example.com\")\n+    assert token is not None\n+\n+    reset_password(conn, token, \"new-secure-password\")\n+    with pytest.raises(InvalidTokenError):\n+        reset_password(conn, token, \"another-password123\")\n+\n+\n+def test_reset_password_rejects_expired_token(conn: sqlite3.Connection) -> None:\n+    register(conn, \"user@example.com\", \"old-password123\")\n+    start_time = utcnow()\n+    token = request_password_reset(conn, \"user@example.com\", now=start_time)\n+    assert token is not None\n+\n+    # Attempt reset after 61 minutes\n+    later = start_time + timedelta(minutes=61)\n+    with pytest.raises(InvalidTokenError):\n+        reset_password(conn, token, \"new-secure-password\", now=later)\n+\n+\n+def test_reset_password_valid_within_1_hour(conn: sqlite3.Connection) -> None:\n+    register(conn, \"user@example.com\", \"old-password123\")\n+    start_time = utcnow()\n+    token = request_password_reset(conn, \"user@example.com\", now=start_time)\n+    assert token is not None\n+\n+    # Exactly 59 minutes later should still be valid\n+    within_time = start_time + timedelta(minutes=59)\n+    reset_password(conn, token, \"new-secure-password\", now=within_time)\n+    assert authenticate(conn, \"user@example.com\", \"new-secure-password\")\n+\n+\n+def test_reset_password_rejects_unknown_token(conn: sqlite3.Connection) -> None:\n+    with pytest.raises(InvalidTokenError):\n+        reset_password(conn, \"invalid-random-token\", \"new-secure-password\")\n+\n+\n+def test_reset_password_rejects_short_password(conn: sqlite3.Connection) -> None:\n+    register(conn, \"user@example.com\", \"old-password123\")\n+    token = request_password_reset(conn, \"user@example.com\")\n+    assert token is not None\n+\n+    with pytest.raises(UserError):\n+        reset_password(conn, token, \"short\")\n"
+    }
+   },
+   "latency_ms": 6731,
+   "token_usage": {
+    "input": 2742,
+    "output": 2446,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:03.163800Z"
+  },
+  {
+   "id": "evt_e2a1ef7890ab",
+   "seq": 4,
+   "agent_name": "execute",
+   "event_type": "EXECUTION_PASSED",
+   "status": "ok",
+   "output": {
+    "checks": [
+     {
+      "name": "compile",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m compileall -q .",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 168,
+      "timed_out": false,
+      "passed": true
+     },
+     {
+      "name": "pytest",
+      "image": "agenteval-sandbox:latest",
+      "required": true,
+      "command": "python -m pytest -q --tb=short -p no:cacheprovider --junitxml=.agenteval/pytest.xml",
+      "exit_code": 0,
+      "stdout": ".......................                                                  [100%]\n23 passed in 0.26s\n",
+      "stderr": "",
+      "duration_ms": 500,
+      "timed_out": false,
+      "passed": true
+     }
+    ],
+    "tests": {
+     "total": 23,
+     "passed": 23,
+     "failed": 0,
+     "errors": 0,
+     "skipped": 0,
+     "failures": []
+    },
+    "passed": true
+   },
+   "latency_ms": 694,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-09-26T09:38:03.878806Z"
+  },
+  {
+   "id": "evt_eb51bc3d2416",
+   "seq": 5,
+   "agent_name": "validate",
+   "event_type": "VALIDATION_PASSED",
+   "status": "ok",
+   "output": {
+    "passed": true,
+    "checks": {
+     "functional_correctness": true,
+     "test_presence": true,
+     "regression_safety": true,
+     "requirement_coverage": true,
+     "test_coverage": true
+    },
+    "failed_checks": [],
+    "requirements": [
+     {
+      "requirement": "Persist tokens in a new table created by a new numbered SQL migration in migrations/ storing token hash, user_id, expires_at, used_at, created_at without storing plaintext tokens.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Added `migrations/003_password_resets.sql` defining `password_reset_tokens` table. In `tests/test_password_reset.py`, `test_password_reset_success_flow` asserts token hash storage and migration cleanly runs."
+     },
+     {
+      "requirement": "Define InvalidTokenError as a subclass of UserError in authkit/users.py.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "`class InvalidTokenError(UserError):` defined in `authkit/users.py`; imported and checked in `tests/test_password_reset.py`."
+     },
+     {
+      "requirement": "Implement request_password_reset(conn, email, now=None) -> str | None returning a random single-use token valid for 1 hour, or None if no user has that email.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Implemented in `authkit/users.py` using `secrets.token_urlsafe(32)` and `hash_token`. Tested in `test_request_password_reset_for_nonexistent_email` and `test_password_reset_success_flow`."
+     },
+     {
+      "requirement": "Implement reset_password(conn, token, new_password, now=None) -> None which validates minimum password length (raising UserError), sets the user's new password, and marks the token used.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Implemented in `authkit/users.py` checking `MIN_PASSWORD_LENGTH`, updating `users` and `password_reset_tokens`. Tested in `test_password_reset_success_flow` and `test_reset_password_rejects_short_password`."
+     },
+     {
+      "requirement": "Raise InvalidTokenError for an unknown, expired, or already-used token in reset_password.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "Handled in `reset_password` and tested in `test_reset_password_rejects_used_token`, `test_reset_password_rejects_expired_token`, and `test_reset_password_rejects_unknown_token`."
+     },
+     {
+      "requirement": "Support optional timezone-aware UTC datetime `now` parameter in request_password_reset and reset_password for expiry testing.",
+      "implemented": true,
+      "tested": true,
+      "evidence": "`now` parameter supported in both functions in `authkit/users.py` and exercised with custom datetimes in `test_reset_password_rejects_expired_token` and `test_reset_password_valid_within_1_hour`."
+     }
+    ],
+    "issues": [],
+    "evidence": {
+     "tests_total": 23,
+     "tests_passed": 23,
+     "regressions": [],
+     "requirements_review": "llm"
+    }
+   },
+   "latency_ms": 2878,
+   "token_usage": {
+    "input": 3136,
+    "output": 722,
+    "llm_calls": 1
+   },
+   "created_at": "2026-09-26T09:38:06.759996Z"
+  },
+  {
+   "id": "evt_5e4d72162e2e",
+   "seq": 6,
+   "agent_name": "evaluate",
+   "event_type": "RUN_EVALUATED",
+   "status": "ok",
+   "output": {
+    "task_success": true,
+    "first_pass_success": true,
+    "recovered": false,
+    "repair_iterations": 0,
+    "failures": 0,
+    "tests_total": 23,
+    "tests_passed": 23,
+    "llm_calls": 4,
+    "input_tokens": 8094,
+    "output_tokens": 4010,
+    "total_tokens": 12104,
+    "total_latency_ms": 15889,
+    "failure_categories": []
+   },
+   "latency_ms": 0,
+   "token_usage": {
+    "input": 0,
+    "output": 0,
+    "llm_calls": 0
+   },
+   "created_at": "2026-09-26T09:38:06.772779Z"
+  }
+ ],
+ "failures": [],
+ "evaluation": [
+  {
+   "metric": "acceptance_passed",
+   "score": 1.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_passed",
+   "score": 8.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "acceptance_tests_total",
+   "score": 8.0,
+   "evaluator": "acceptance_v1"
+  },
+  {
+   "metric": "retrieval_recall",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_precision",
+   "score": 1.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_missed",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "retrieval_irrelevant",
+   "score": 0.0,
+   "evaluator": "retrieval_v1"
+  },
+  {
+   "metric": "task_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "first_pass_success",
+   "score": 1.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "recovered",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "repair_iterations",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "failures",
+   "score": 0.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_total",
+   "score": 23.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "tests_passed",
+   "score": 23.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "llm_calls",
+   "score": 4.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "input_tokens",
+   "score": 8094.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "output_tokens",
+   "score": 4010.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_tokens",
+   "score": 12104.0,
+   "evaluator": "run_metrics_v1"
+  },
+  {
+   "metric": "total_latency_ms",
+   "score": 15889.0,
+   "evaluator": "run_metrics_v1"
+  }
+ ]
+}
