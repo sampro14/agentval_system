@@ -1,0 +1,532 @@
+{
+  "summary": {
+    "faults": 15,
+    "not_analyzed": 0,
+    "errors": 0,
+    "category_accuracy": 0.8,
+    "stage_accuracy": 0.8,
+    "both_correct": 0.8,
+    "by_method": {
+      "rule": {
+        "runs": 6,
+        "correct": 6
+      },
+      "llm": {
+        "runs": 9,
+        "correct": 6
+      }
+    },
+    "confusion": {
+      "CODE_GENERATION/draft -> CODE_GENERATION/draft": 9,
+      "ENVIRONMENT/execute -> ENVIRONMENT/execute": 3,
+      "PLANNING/planner -> CODE_GENERATION/draft": 3
+    },
+    "confidence_when_right": 0.9125,
+    "confidence_when_wrong": 0.95,
+    "avg_tokens": 1593.8,
+    "avg_seconds": 4.927276269548262
+  },
+  "outcomes": [
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.8,
+        "method": "rule",
+        "root_cause": "Code depends on unavailable module 'requests'",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 0.9,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The coder failed to implement and test resetting the failure count upon a successful login, despite it being clearly specified in the task and plan.",
+        "correct": true
+      },
+      "tokens": 4591,
+      "seconds": 12.5,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The client-side validation logic or test implementation failed to properly cancel the submit event (preventDefault) on invalid input, causing window.__prevented to be False instead of True.",
+        "correct": true
+      },
+      "tokens": 1632,
+      "seconds": 5.5,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "ENVIRONMENT",
+        "stage": "execute",
+        "confidence": 0.95,
+        "method": "rule",
+        "root_cause": "Sandbox could not run the 'compile' check",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 1.6,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The implementation failed to check token expiry or compare expiry against the provided `now` timestamp in `reset_password`, allowing an expired token to be used without raising `InvalidTokenError`.",
+        "correct": false
+      },
+      "tokens": 1647,
+      "seconds": 4.8,
+      "error": null
+    },
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.8,
+        "method": "rule",
+        "root_cause": "Code depends on unavailable module 'requests'",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 0.7,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The plan explicitly specified resetting the failure count upon successful login, but the coder omitted updating the failed_logins counter to 0 on successful authentication in authkit/users.py and did not write a test for it.",
+        "correct": true
+      },
+      "tokens": 4702,
+      "seconds": 12.2,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The form submit event was not prevented on invalid input (or event.preventDefault() was not called / tracked properly), causing the assertion `window.__prevented == [True, False]` to fail with `[False, False]`.",
+        "correct": true
+      },
+      "tokens": 1612,
+      "seconds": 5.7,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "ENVIRONMENT",
+        "stage": "execute",
+        "confidence": 0.95,
+        "method": "rule",
+        "root_cause": "Sandbox could not run the 'compile' check",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 1.5,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The implementation of reset_password failed to check token expiration or handle the `now` argument properly, causing `test_a_token_expires_after_an_hour` to fail because `InvalidTokenError` was not raised.",
+        "correct": false
+      },
+      "tokens": 1647,
+      "seconds": 4.0,
+      "error": null
+    },
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.8,
+        "method": "rule",
+        "root_cause": "Code depends on unavailable module 'requests'",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 0.6,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The plan explicitly specified that a successful login resets the failure count, but the coder failed to implement resetting failed_logins in authenticate() and omitted tests verifying this behavior.",
+        "correct": true
+      },
+      "tokens": 4768,
+      "seconds": 13.1,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "The client-side validation script failed to cancel the submit event (e.g. event.preventDefault() was not called on invalid submit), causing the Playwright test assertion `assert form.evaluate(\"window.__prevented\") == [True, False]` to fail with `[False, False]`.",
+        "correct": true
+      },
+      "tokens": 1628,
+      "seconds": 5.8,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "ENVIRONMENT",
+        "stage": "execute",
+        "confidence": 0.95,
+        "method": "rule",
+        "root_cause": "Sandbox could not run the 'compile' check",
+        "correct": true
+      },
+      "tokens": 0,
+      "seconds": 1.3,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": "CODE_GENERATION",
+        "stage": "draft",
+        "confidence": 0.95,
+        "method": "llm",
+        "root_cause": "reset_password failed to raise InvalidTokenError when a token is expired in test_a_token_expires_after_an_hour, indicating a bug in token expiration checking or handling of the 'now' parameter in authkit/users.py.",
+        "correct": false
+      },
+      "tokens": 1680,
+      "seconds": 3.6,
+      "error": null
+    }
+  ]
+}
