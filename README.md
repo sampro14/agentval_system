@@ -7,12 +7,13 @@
 Seven agents plan, code, test and repair. A locked-down Docker sandbox, not the model, decides whether it worked.
 
 [![CI](https://github.com/sampro14/agentval_system/actions/workflows/ci.yml/badge.svg)](https://github.com/sampro14/agentval_system/actions/workflows/ci.yml)
+[![Replay](https://img.shields.io/badge/demo-watch_recorded_runs-059669)](https://sampro14.github.io/agentval_system/)
 ![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-1C3C3C)
 ![Docker](https://img.shields.io/badge/sandbox-Docker-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-[Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) · [Command-line tools](#command-line-tools) · [Dashboard](#dashboard) · [Roadmap](#roadmap)
+**[▶ Watch recorded runs](https://sampro14.github.io/agentval_system/)** · [Results](#results) · [How it works](#how-it-works) · [Quick start](#quick-start) · [Command-line tools](#command-line-tools) · [Dashboard](#dashboard) · [Roadmap](#roadmap)
 
 <img src="docs/media/demo.gif" alt="AgentEval dashboard walkthrough: a clean pass with a real diff and sandboxed test run, then a run that fails, gets diagnosed, and repairs itself" width="860" />
 
@@ -71,6 +72,9 @@ Held-out split of the fault suite: 5 planted bugs and 3 untouched controls, each
 | Validator | Clean controls wrongly flagged | **0 / 9** |
 | Failure analyzer | Right failure category and right agent blamed | **12 / 15** (rules 6/6, LLM 6/9) |
 | Validator | Cost per run | about 1,100 tokens and 4 s |
+
+Raw output, one record per run: [validate](docs/results/validate-heldout-20261127-150634.json) ·
+[analyze](docs/results/analyze-heldout-20261127-150659.json).
 
 What these numbers don't show:
 
@@ -192,6 +196,22 @@ Open **http://localhost:3000**, pick a task and a provider, press **Start run**,
 | **Runs** | Start a run with a chosen task and provider, and watch the pipeline advance stage by stage. |
 | **Run detail** | The full trajectory as a timeline: each event's output, latency, tokens, failures and repairs. |
 | **One agent at a time** | Runs a single agent on a task and shows its prompt, raw reply and result. Each agent continues from the previous agent's saved output. |
+
+## Hosted replay
+
+The [replay site](https://sampro14.github.io/agentval_system/) is this dashboard built as static files. It serves runs recorded with real models and the
+real sandbox, and plays each one back step by step, so you can watch the agents work without installing anything.
+Nothing runs there and no API keys are involved.
+
+To refresh it, start the API and the worker (see [Quick start](#quick-start)), finish a few runs, then:
+
+```bash
+uv run python -m agenteval.dev.replay --run <id> --run <id>   # or no --run for every finished run
+git add apps/web/public/replay && git commit -m "Refresh the replay" && git push
+```
+
+The exporter scrubs home-directory paths and anything shaped like an API key. On a push to `main`, the `replay-site`
+workflow builds `apps/web` with `NEXT_PUBLIC_REPLAY=1` and publishes it to GitHub Pages.
 
 ## Command-line tools
 

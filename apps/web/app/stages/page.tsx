@@ -4,10 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { EventBody } from "@/components/EventView";
 import { ProviderField, pickDefaultProvider } from "@/components/ProviderField";
 import { Banner, Card, Chip, Metric, Pre, Tick } from "@/components/ui";
-import { api, ApiError, type Provider, type Scorecard, type StageResult, type StageRow, type Task } from "@/lib/api";
+import { ReplayNotice } from "@/components/Replay";
+import { api, ApiError, REPLAY, type Provider, type Scorecard, type StageResult, type StageRow, type Task } from "@/lib/api";
 import { fmtMs, fmtNumber, label } from "@/lib/format";
 
 export default function StagesPage() {
+  return REPLAY ? <ReplayNotice /> : <LiveStagesPage />;
+}
+
+function LiveStagesPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [taskId, setTaskId] = useState("");
