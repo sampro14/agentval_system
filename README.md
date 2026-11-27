@@ -73,6 +73,9 @@ Held-out split of the fault suite: 5 planted bugs and 3 untouched controls, each
 | Failure analyzer | Right failure category and right agent blamed | **12 / 15** (rules 6/6, LLM 6/9) |
 | Validator | Cost per run | about 1,100 tokens and 4 s |
 
+Raw output, one record per run: [validate](docs/results/validate-heldout-20261127-150634.json) ·
+[analyze](docs/results/analyze-heldout-20261127-150659.json).
+
 What these numbers don't show:
 
 - **The sample is small.** Five bugs and three controls make this a check, not a benchmark.

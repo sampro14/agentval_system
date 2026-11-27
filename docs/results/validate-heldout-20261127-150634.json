@@ -1,0 +1,778 @@
+{
+  "summary": {
+    "runs": 24,
+    "errors": 0,
+    "faults": 15,
+    "detection_rate": 1.0,
+    "controls": 9,
+    "false_positive_rate": 0.0,
+    "verdicts_correct": 1.0,
+    "execution_as_expected": 1.0,
+    "avg_tokens": 1091.4583333333333,
+    "avg_seconds": 4.055675168424689
+  },
+  "outcomes": [
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.2,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2578,
+      "seconds": 8.1,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 2.8,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.6,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.2,
+      "error": null
+    },
+    {
+      "case": "control-change-password",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1830,
+      "seconds": 6.1,
+      "error": null
+    },
+    {
+      "case": "control-login-lockout",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2598,
+      "seconds": 7.6,
+      "error": null
+    },
+    {
+      "case": "control-delete-account",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 1,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1654,
+      "seconds": 5.1,
+      "error": null
+    },
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 0.7,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2560,
+      "seconds": 6.6,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 2.1,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.5,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.0,
+      "error": null
+    },
+    {
+      "case": "control-change-password",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1812,
+      "seconds": 4.7,
+      "error": null
+    },
+    {
+      "case": "control-login-lockout",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2719,
+      "seconds": 7.5,
+      "error": null
+    },
+    {
+      "case": "control-delete-account",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 2,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1685,
+      "seconds": 5.5,
+      "error": null
+    },
+    {
+      "case": "ev-imports-requests",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 0.8,
+      "error": null
+    },
+    {
+      "case": "ll-no-reset",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": true,
+        "detected": true,
+        "failed_checks": [
+          "requirement_coverage"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": true,
+      "detected": true,
+      "failed_checks": [
+        "requirement_coverage",
+        "test_coverage"
+      ],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2528,
+      "seconds": 7.3,
+      "error": null
+    },
+    {
+      "case": "lf-no-cancel",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "CODE_GENERATION",
+        "stage": "draft"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 2.4,
+      "error": null
+    },
+    {
+      "case": "sandbox-missing-image",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "ENVIRONMENT",
+        "stage": "execute"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness",
+        "test_presence"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.4,
+      "error": null
+    },
+    {
+      "case": "pr-plan-omits-expiry",
+      "kind": "fault",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": false,
+        "detected": true,
+        "failed_checks": [
+          "functional_correctness"
+        ],
+        "category": "PLANNING",
+        "stage": "planner"
+      },
+      "execution_passed": false,
+      "detected": true,
+      "failed_checks": [
+        "functional_correctness"
+      ],
+      "requirements_review": "skipped: the evidence checks already fail",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 0,
+      "seconds": 1.2,
+      "error": null
+    },
+    {
+      "case": "control-change-password",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1815,
+      "seconds": 6.0,
+      "error": null
+    },
+    {
+      "case": "control-login-lockout",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 2759,
+      "seconds": 8.8,
+      "error": null
+    },
+    {
+      "case": "control-delete-account",
+      "kind": "control",
+      "split": "heldout",
+      "repeat": 3,
+      "expected": {
+        "execution_passes": true,
+        "detected": false,
+        "failed_checks": [],
+        "category": null,
+        "stage": null
+      },
+      "execution_passed": true,
+      "detected": false,
+      "failed_checks": [],
+      "requirements_review": "llm",
+      "verdict_correct": true,
+      "analysis": {
+        "category": null,
+        "stage": null,
+        "confidence": null,
+        "method": null,
+        "root_cause": "",
+        "correct": null
+      },
+      "tokens": 1657,
+      "seconds": 6.0,
+      "error": null
+    }
+  ]
+}
