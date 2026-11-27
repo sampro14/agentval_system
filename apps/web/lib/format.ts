@@ -26,7 +26,8 @@ export function recordedOn(iso: string): string {
 
 export function elapsedMs(start: string | null, end: string | null, now = Date.now()): number | null {
   if (!start) return null;
-  return (end ? new Date(end).getTime() : now) - new Date(start).getTime();
+  // Clamp at zero: a replay's clock can start a few ms after the page's first tick.
+  return Math.max(0, (end ? new Date(end).getTime() : now) - new Date(start).getTime());
 }
 
 export const AGENT_LABELS: Record<string, string> = {
