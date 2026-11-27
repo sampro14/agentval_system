@@ -2,33 +2,29 @@
 
 # AgentEval
 
-**Multi-agent reliability & evaluation platform**
+**Find out where an AI agent run went wrong, why, and whether it recovered.**
 
-Don't just ask *"did the agent succeed?"*: find out **where** it went wrong, **why**, and whether it recovered.
+Seven agents plan, code, test and repair. A locked-down Docker sandbox, not the model, decides whether it worked.
 
 [![CI](https://github.com/sampro14/agentval_system/actions/workflows/ci.yml/badge.svg)](https://github.com/sampro14/agentval_system/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-1C3C3C)
-![Next.js](https://img.shields.io/badge/dashboard-Next.js-000000?logo=nextdotjs&logoColor=white)
 ![Docker](https://img.shields.io/badge/sandbox-Docker-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-[Quick start](#-quick-start) · [How it works](#-how-it-works) · [Dashboard](#-dashboard) · [API](#-api) · [Docs](#-documentation) · [Roadmap](#-roadmap)
+[How it works](#how-it-works) · [Quick start](#quick-start) · [Command-line tools](#command-line-tools) · [Dashboard](#dashboard) · [Roadmap](#roadmap)
+
+<img src="docs/media/demo.gif" alt="AgentEval dashboard walkthrough: a clean pass with a real diff and sandboxed test run, then a run that fails, gets diagnosed, and repairs itself" width="860" />
 
 </div>
 
----
+Two real runs against the `authkit` benchmark app, driven by Gemini through the live dashboard, not staged or mocked. The second run genuinely failed on its first attempt (an empty draft), was attributed to the `CODE_GENERATION` stage with 95% confidence, and recovered after one repair — exactly the kind of trajectory a single pass/fail number would hide.
 
-## Demo
+| **7 agents** | **Execution is ground truth** | **16 planted bugs + 6 controls** | **Runs offline in CI** |
+|:---:|:---:|:---:|:---:|
+| planner → researcher → coder → executor → validator → failure analyzer → repairer, with a bounded repair loop | generated code runs in Docker with no network and CPU, memory, process and time limits | the evaluator must catch and correctly attribute each bug, and pass the untouched controls; a held-out split is kept for the final check | fake LLM and fake sandbox, so the test suite needs no API key or Docker |
 
-Two real runs against the actual `authkit` benchmark app, driven by Gemini through the live dashboard — not staged, not mocked.
-
-![AgentEval dashboard walkthrough: a clean pass with a real diff and sandboxed test run, then a run that fails, gets diagnosed, and repairs itself](docs/media/demo.gif)
-
-The second run genuinely failed on its first attempt (an empty draft), was attributed to the `CODE_GENERATION` stage with 95% confidence, and recovered after one repair — exactly the kind of trajectory a single pass/fail number would hide.
-
-## Why AgentEval?
+## The problem
 
 Most agent benchmarks report a single number: *"task success rate: 82%."* That number can't tell you why the
 other 18% failed. Was the plan wrong? Did the agent read the wrong files? Was the code buggy, the test
@@ -48,7 +44,7 @@ Plan → Research → Draft → Execute → Validate → Diagnose → Repair →
 - **Nothing is hidden behind one score.** The goal is a multi-dimensional reliability scorecard, not a single
   opaque number.
 
-## What this project demonstrates
+## What's inside
 
 - **Multi-agent orchestration** — seven agents (planner, researcher, coder, executor, validator, failure
   analyzer, repairer) composed as a stateful graph in [LangGraph](https://github.com/langchain-ai/langgraph),
@@ -57,14 +53,14 @@ Plan → Research → Draft → Execute → Validate → Diagnose → Repair →
   (compile, pytest, a hidden acceptance test in a sandbox), never by asking the model.
 - **A hybrid classifier, not just an LLM wrapper** — failure attribution runs deterministic rules first and
   only calls an LLM when confidence is below a threshold, with every decision tagged by which path produced it.
-- **An evaluator that evaluates itself** — a [fault-injection harness](#-command-line-tools) plants 22 known
-  bugs into reference solutions and scores whether the validator and failure analyzer catch and correctly
+- **An evaluator that evaluates itself** — a [fault-injection harness](#command-line-tools) plants 16 known
+  bugs (plus 6 untouched controls) into reference solutions and scores whether the validator and failure analyzer catch and correctly
   attribute each one, on held-out splits never tuned against.
 - **A full delivery, not a notebook** — FastAPI + Postgres + Redis-backed async workers on the backend, a
   Next.js dashboard on the front end, Alembic migrations, and a pytest suite that runs offline against a fake
   LLM and fake sandbox (no API key or Docker required for CI).
 
-## 🧩 How it works
+## How it works
 
 ```mermaid
 flowchart LR
@@ -116,7 +112,7 @@ has hidden acceptance tests and a list of the files an agent should find.
 | `login-form-validation` | medium | browser / Playwright |
 | `password-reset` | hard | multi-file, SQL migration, tokens |
 
-## 🚀 Quick start
+## Quick start
 
 **Requirements:** Python 3.12, [uv](https://docs.astral.sh/uv/), Node 20+, and Docker (running).
 
@@ -163,7 +159,7 @@ Open **http://localhost:3000**, pick a task and a provider, press **Start run**,
 
 </details>
 
-## 🖥 Dashboard
+## Dashboard
 
 | Page | What it shows |
 |---|---|
@@ -171,7 +167,28 @@ Open **http://localhost:3000**, pick a task and a provider, press **Start run**,
 | **Run detail** | The full trajectory as a timeline: each event's output, latency, tokens, failures and repairs. |
 | **One agent at a time** | Runs a single agent on a task and shows its prompt, raw reply and result. Each agent continues from the previous agent's saved output. |
 
-## 🔌 API
+## Command-line tools
+
+```bash
+# Run one agent on one task, and print everything it did
+uv run python -m agenteval.dev.stage planner --task password-reset
+uv run python -m agenteval.dev.stage research --task password-reset   # continues from the planner's saved state
+uv run python -m agenteval.dev.stage planner --task all --brief       # every task, compact table
+
+# Score the failure-handling agents against known-broken solutions
+uv run python -m agenteval.dev.faults validate                        # dev split (safe to tune on)
+uv run python -m agenteval.dev.faults validate --split heldout        # only for the final check
+uv run python -m agenteval.dev.faults validate --case da-no-tests --repeat 3
+```
+
+The fault suite has 22 cases: 16 deliberate single faults (a missing migration, a plaintext token, a wrong
+lockout threshold, a syntax error, an infinite loop, and so on) and 6 untouched controls. The planner, research
+and coder LLM calls are skipped, and the real executor runs in the real sandbox.
+
+## Reference
+
+<details>
+<summary><b>API reference</b></summary>
 
 Base path `/api/v1`.
 
@@ -192,25 +209,10 @@ curl -X POST localhost:8001/api/v1/runs -H 'content-type: application/json' \
 curl localhost:8001/api/v1/runs/<id>/trajectory
 ```
 
-## 🛠 Command-line tools
+</details>
 
-```bash
-# Run one agent on one task, and print everything it did
-uv run python -m agenteval.dev.stage planner --task password-reset
-uv run python -m agenteval.dev.stage research --task password-reset   # continues from the planner's saved state
-uv run python -m agenteval.dev.stage planner --task all --brief       # every task, compact table
-
-# Score the failure-handling agents against known-broken solutions
-uv run python -m agenteval.dev.faults validate                        # dev split (safe to tune on)
-uv run python -m agenteval.dev.faults validate --split heldout        # only for the final check
-uv run python -m agenteval.dev.faults validate --case da-no-tests --repeat 3
-```
-
-The fault suite has 22 cases: deliberate single faults (a missing migration, a plaintext token, a wrong
-lockout threshold, a syntax error, an infinite loop, and so on) and untouched controls. The planner, research
-and coder LLM calls are skipped, and the real executor runs in the real sandbox.
-
-## 🏗 Project structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 agenteval/
@@ -230,7 +232,10 @@ docs/                system design and learning guide
 tests/               pytest suite
 ```
 
-## 🧪 Development
+</details>
+
+<details>
+<summary><b>Development and tests</b></summary>
 
 ```bash
 uv run ruff check . && uv run ruff format --check .
@@ -242,12 +247,9 @@ The tests use SQLite and scripted fake LLM and sandbox classes, so they need no 
 integration tests run only when the matching sandbox images are built. CI builds the base image but not the
 browser image.
 
-## 📚 Documentation
+</details>
 
-- [docs/system-design.md](docs/system-design.md): the full design and vision (agents, metrics, reliability score, data model).
-- [docs/LEARNING.md](docs/LEARNING.md): a walkthrough of the code that exists today and why it is built this way.
-
-## 🗺 Roadmap
+## Roadmap
 
 - [x] **1. Core runtime**: FastAPI, LangGraph workflow, Docker sandbox, Postgres storage, Redis worker, LLM providers
 - [x] **2. Validation**: pytest and Playwright execution, validator agent, failure analyzer
@@ -256,6 +258,6 @@ browser image.
 - [ ] **4. Recovery**: targeted repair agent, retry policy, recovery metrics
 - [ ] **6. Research**: benchmark dataset, baselines, ablation studies
 
-## 📄 License
+## License
 
 Released under the [MIT License](LICENSE).
